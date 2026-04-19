@@ -5,7 +5,7 @@ resource "helm_release" "cert_manager" {
   repository       = "https://charts.jetstack.io"
   chart            = "cert-manager"
   version          = var.cert_manager_version
-  namespace        = "cert-manager"
+  namespace        = var.cert_manager_namespace
   create_namespace = true
 
   set {
@@ -35,7 +35,7 @@ resource "helm_release" "cluster_issuers" {
 
   name             = "cert-manager-cluster-issuers"
   chart            = "${path.module}/charts/cert-manager-cluster-issuers"
-  namespace        = "cert-manager"
+  namespace        = var.cert_manager_namespace
   create_namespace = true
 
   values = [
