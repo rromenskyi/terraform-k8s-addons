@@ -1,11 +1,12 @@
 # terraform-k8s-addons
 
 Opinionated platform layer for a local Kubernetes cluster: **Traefik** (ingress
-controller + IngressClass), **cert-manager** (plus Let's Encrypt staging +
-production ClusterIssuers), **kube-prometheus-stack** (Prometheus + Grafana +
-Alertmanager + exporters, with Grafana exposed through Traefik), PodSecurity-
-labeled namespaces with default `ResourceQuota` / `LimitRange`, and a demo
-`ops` StatefulSet that exercises persistent storage.
+controller + IngressClass, optional dashboard via `IngressRoute`), **cert-manager**
+(plus Let's Encrypt staging + production ClusterIssuers), **kube-prometheus-stack**
+(Prometheus + Grafana + Alertmanager + exporters — services stay cluster-internal,
+downstream stacks wire their own public route), PodSecurity-labeled namespaces
+with default `ResourceQuota` / `LimitRange`, and a demo `ops` StatefulSet that
+exercises persistent storage.
 
 The module is **distribution-agnostic**: it consumes a `kubeconfig_path`
 input and deploys everything via the `kubernetes` and `helm` providers.
@@ -34,7 +35,7 @@ module "addons" {
   enable_traefik      = true
   enable_cert_manager = true
   enable_monitoring   = true
-  create_ops_workload = true
+  enable_ops_workload = true
 }
 ```
 
@@ -60,10 +61,26 @@ clean three-layer stack.
 | cert-manager Helm release | `cert-manager` | `enable_cert_manager` |
 | Let's Encrypt staging + production `ClusterIssuer`s (via local Helm chart) | `cert-manager` | `enable_cert_manager` |
 | kube-prometheus-stack (Prometheus + Grafana + Alertmanager + exporters) | `monitoring` | `enable_monitoring` |
-| Grafana `Ingress` at `grafana.<base_domain>` with websecure + TLS | `monitoring` | `enable_monitoring` |
-| PodSecurity-labeled namespaces (`ops`, `monitoring` by default) | per `var.namespaces` | always |
+| PodSecurity-labeled namespaces (`ops` by default; chart-managed ones stay unlabeled) | per `var.namespaces` | always |
 | Default `ResourceQuota` + `LimitRange` on each namespace | per `var.namespaces` | `enable_namespace_limits` |
-| Demo `ops` StatefulSet (hardened `restricted`-compatible security context) | `var.namespace` | `create_ops_workload` |
+| Demo `ops` StatefulSet (hardened `restricted`-compatible security context) | `var.namespace` | `enable_ops_workload` |
+
+### Reaching Grafana
+
+The chart-side Grafana `Ingress` stays disabled on purpose. This module
+ships no public route for Grafana — the Service
+`kube-prometheus-stack-grafana` in `var.monitoring_namespace` is
+cluster-internal only. Downstream stacks attach their own route (
+`IngressRoute`, `Ingress`, Gateway API, whatever) at the domain of their
+choice. The `grafana_credentials` output returns the admin username,
+password, and Service coordinates to wire up.
+
+Quick local access without an ingress:
+
+```bash
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+# → http://localhost:3000  (admin / <password from terraform output>)
+```
 
 ## Provider wiring
 

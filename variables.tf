@@ -45,7 +45,7 @@ variable "ingress_controller_namespace" {
 }
 
 variable "monitoring_namespace" {
-  description = "Namespace for the kube-prometheus-stack Helm release (Prometheus / Grafana / Alertmanager / node-exporter / kube-state-metrics / operator). Also where the module's Grafana Ingress lives."
+  description = "Namespace for the kube-prometheus-stack Helm release (Prometheus / Grafana / Alertmanager / node-exporter / kube-state-metrics / operator). The module does not publish Grafana on a public hostname — downstream stacks wire their own Ingress/IngressRoute at the `kube-prometheus-stack-grafana` Service in this namespace."
   type        = string
   default     = "monitoring"
 }
@@ -78,7 +78,7 @@ variable "enable_namespace_limits" {
 # --------------------------------------------------------------------------
 
 variable "base_domain" {
-  description = "Base domain used to derive default hostnames for the Traefik dashboard (`traefik.<base>`) and Grafana (`grafana.<base>`). Defaults to `localhost` for local-only use; set to a real domain for remote access."
+  description = "Base domain used to derive the Traefik dashboard hostname (`traefik.<base>`) when `enable_traefik_dashboard = true`. Not used by monitoring — this module does not publish Grafana publicly. Defaults to `localhost` for local-only use; set to a real domain for remote access."
   type        = string
   default     = "localhost"
 
@@ -147,7 +147,7 @@ variable "letsencrypt_email" {
 # --------------------------------------------------------------------------
 
 variable "enable_monitoring" {
-  description = "Deploy kube-prometheus-stack (Prometheus + Grafana + Alertmanager + exporters). Grafana is exposed via a Traefik `Ingress` at `grafana.<base_domain>` with `websecure` + TLS."
+  description = "Deploy kube-prometheus-stack (Prometheus + Grafana + Alertmanager + node-exporter + kube-state-metrics + operator). This module does NOT publish Grafana on any public hostname; its Service `kube-prometheus-stack-grafana.<monitoring_namespace>` is reachable cluster-internal, and consumers wire their own Ingress/IngressRoute at the domain of their choice."
   type        = bool
   default     = true
 }
@@ -162,7 +162,7 @@ variable "kube_prometheus_stack_version" {
 # Demo ops workload
 # --------------------------------------------------------------------------
 
-variable "create_ops_workload" {
+variable "enable_ops_workload" {
   description = "Create a demo `ops` StatefulSet that exercises the cluster's default StorageClass. Used as a smoke test; safe to disable in production stacks."
   type        = bool
   default     = true

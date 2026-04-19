@@ -41,10 +41,10 @@ resource "helm_release" "monitoring" {
     value = "true"
   }
 
-  # Grafana's chart-side Ingress is left disabled on purpose. The Ingress
-  # exposing `grafana.<base_domain>` is managed below as
-  # `kubernetes_ingress_v1.grafana`, which carries the Traefik-specific
-  # router annotations the chart would not.
+  # Grafana's chart-side Ingress stays disabled on purpose. This module
+  # ships no public route for Grafana — consumers attach their own
+  # (Ingress, IngressRoute, Gateway API, whatever) to the ClusterIP
+  # Service `kube-prometheus-stack-grafana.<monitoring_namespace>`.
 
   set {
     name  = "prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues"

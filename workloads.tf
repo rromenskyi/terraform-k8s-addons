@@ -4,7 +4,7 @@
 # compatible with a `restricted` PodSecurity level, not just `baseline`.
 
 resource "kubernetes_stateful_set_v1" "ops" {
-  for_each = var.create_ops_workload ? toset(["enabled"]) : toset([])
+  for_each = var.enable_ops_workload ? toset(["enabled"]) : toset([])
   # Ensure the target namespace exists before the StatefulSet is created.
   # Without this, `var.namespace` defaulting to `ops` would race the
   # namespace creation and the pod might land in a namespace Terraform
