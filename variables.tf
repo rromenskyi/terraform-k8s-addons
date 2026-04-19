@@ -32,8 +32,26 @@ variable "cluster_distribution" {
 # Namespaces
 # --------------------------------------------------------------------------
 
+variable "cert_manager_namespace" {
+  description = "Namespace for the cert-manager Helm release. Helm creates it with `create_namespace = true` and deletes it on release destroy. Not labeled with Pod Security Standards by this module because the webhook/cainjector need host-access permissions that `baseline` denies."
+  type        = string
+  default     = "cert-manager"
+}
+
+variable "ingress_controller_namespace" {
+  description = "Namespace for the Traefik Helm release. Named after the role (not the product) so downstream stacks can address it the same way across distributions."
+  type        = string
+  default     = "ingress-controller"
+}
+
+variable "monitoring_namespace" {
+  description = "Namespace for the kube-prometheus-stack Helm release (Prometheus / Grafana / Alertmanager / node-exporter / kube-state-metrics / operator). Also where the module's Grafana Ingress lives."
+  type        = string
+  default     = "monitoring"
+}
+
 variable "namespaces" {
-  description = "Namespaces the module creates with PodSecurity labels, a default `ResourceQuota`, and a default `LimitRange`. Helm-managed namespaces (`ingress-controller`, `cert-manager`, `monitoring`) are NOT in this list because the charts create them — chart-managed namespaces intentionally skip our PodSecurity labels since some workloads need privileged pods (kube-prometheus-stack's node-exporter, cert-manager's webhook, …)."
+  description = "Namespaces the module creates with PodSecurity labels, a default `ResourceQuota`, and a default `LimitRange`. Helm-managed namespaces (`cert_manager_namespace`, `ingress_controller_namespace`, `monitoring_namespace`) are NOT in this list because the charts create them — chart-managed namespaces intentionally skip our PodSecurity labels since some workloads need privileged pods (kube-prometheus-stack's node-exporter, cert-manager's webhook, …)."
   type        = list(string)
   default     = ["ops"]
 }

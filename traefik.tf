@@ -7,7 +7,7 @@ resource "helm_release" "traefik" {
   version    = var.traefik_version
   # The ingress controller lives in a role-named namespace so downstream
   # stacks can address it identically regardless of distribution.
-  namespace        = "ingress-controller"
+  namespace        = var.ingress_controller_namespace
   create_namespace = true
 
   set {
@@ -44,6 +44,17 @@ resource "helm_release" "traefik" {
 
   set {
     name  = "ingressClass.isDefaultClass"
+    value = "true"
+  }
+
+  # Allow IngressRoutes to reference Services in a different namespace. The
+  # platform tenant IngressRoutes live in `phost-<slug>-<env>` namespaces but
+  # may need to route at pre-existing cluster services — e.g. Grafana in
+  # `monitoring`, or any other platform-owned Service. Without this, Traefik
+  # silently drops the route with "forbidden cross-namespace service
+  # reference". Single-cluster platforms can safely enable it.
+  set {
+    name  = "providers.kubernetesCRD.allowCrossNamespace"
     value = "true"
   }
 

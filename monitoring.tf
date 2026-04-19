@@ -18,7 +18,7 @@ resource "helm_release" "monitoring" {
   repository       = "https://prometheus-community.github.io/helm-charts"
   chart            = "kube-prometheus-stack"
   version          = var.kube_prometheus_stack_version
-  namespace        = "monitoring"
+  namespace        = var.monitoring_namespace
   create_namespace = true
 
   # kube-prometheus-stack pulls ~10 container images (prometheus, grafana,
@@ -75,38 +75,8 @@ resource "helm_release" "monitoring" {
   ]
 }
 
-resource "kubernetes_ingress_v1" "grafana" {
-  for_each   = var.enable_monitoring ? toset(["enabled"]) : toset([])
-  depends_on = [helm_release.monitoring]
-
-  metadata {
-    name      = "grafana"
-    namespace = "monitoring"
-    labels    = local.common_labels
-    annotations = {
-      "traefik.ingress.kubernetes.io/router.entrypoints" = "websecure"
-      "traefik.ingress.kubernetes.io/router.tls"         = "true"
-    }
-  }
-
-  spec {
-    ingress_class_name = "traefik"
-    rule {
-      host = "grafana.${var.base_domain}"
-      http {
-        path {
-          path      = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = "kube-prometheus-stack-grafana"
-              port {
-                number = 80
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
+# Grafana has no Ingress here on purpose. The chart's Service
+# `kube-prometheus-stack-grafana` is reachable cluster-wide via its
+# ClusterIP; consumers wire their own IngressRoute (or Ingress) at the
+# domain of their choice. The sibling platform repo exposes Grafana via
+# a tenant IngressRoute that cross-namespace-references this Service.
