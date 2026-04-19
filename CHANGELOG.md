@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `var.traefik_service_type` (default `null`) lets the consumer pin the Traefik Service type. When left `null`, the effective value is distribution-aware: `LoadBalancer` on `cluster_distribution = "k3s"` (klipper-lb assigns the node IP, so the default `helm_release` `wait = true` returns immediately) and `ClusterIP` on `minikube` (no built-in LB; a `LoadBalancer` Service would sit in `EXTERNAL-IP: <pending>` forever and block the release until its 5-minute timeout). `NodePort` is also accepted for operators who want host-bound ports without klipper-lb or an edge tunnel. Behaviour on k3s is unchanged for consumers that do not set the new input
+
+### Changed
+- `var.ops_storage_class_name` default changes from the hardcoded `"local-path"` to `null`. When `null`, the effective value is now distribution-aware: `local-path` on k3s (built-in local-path-provisioner), `standard` on minikube (`k8s.io/minikube-hostpath` — the only StorageClass minikube ships). Consumers on k3s see no behavioural change; consumers on minikube no longer need the per-root workaround `ops_storage_class_name = "standard"`. Explicit overrides still win unchanged
+
+## [1.0.0] - 2026-04-19
+
 ### Changed
 - **BREAKING**: module no longer publishes Grafana on a public hostname. Rationale: the previous `kubernetes_ingress_v1.grafana` at `grafana.<base_domain>` coupled this module to one specific routing model (Ingress + websecure + TLS annotations) when downstream stacks want to own hostname / ACL / cross-namespace `IngressRoute` themselves. Grafana's Service `kube-prometheus-stack-grafana.<monitoring_namespace>` remains cluster-internal and consumers attach their own route
 - **BREAKING**: `grafana_url` output removed (used to be `https://grafana.<base_domain>`; hostname no longer created here). Replace with a URL assembled by the consumer from `grafana_credentials.cluster_host` + the route they publish
