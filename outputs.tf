@@ -28,22 +28,25 @@ output "traefik_dashboard_url" {
   value       = var.enable_traefik && var.enable_traefik_dashboard ? "http://traefik.${var.base_domain}" : null
 }
 
-output "grafana_url" {
-  description = "Grafana URL. Resolves against the Traefik ingress — add an /etc/hosts entry or real DNS to reach it by `base_domain`."
-  value       = var.enable_monitoring ? "https://grafana.${var.base_domain}" : null
-}
-
+# Grafana's chart-side Ingress is intentionally disabled (see monitoring.tf) —
+# this module publishes no public route for Grafana. Downstream consumers
+# attach their own (IngressRoute, Ingress, Gateway API, kubectl port-forward,
+# …) at the cluster-internal Service below and control hostname / TLS / auth
+# themselves. We therefore return *endpoint coordinates*, not a URL.
 output "grafana_credentials" {
-  description = "Grafana login credentials. Password is randomly generated and kept in Terraform state."
+  description = "Grafana admin credentials and in-cluster Service coordinates. Password is randomly generated and kept in Terraform state. Null when `enable_monitoring = false`. Consumers assemble their own public URL — this module does not publish Grafana through Traefik."
   value = var.enable_monitoring ? {
-    url      = "https://grafana.${var.base_domain}"
-    username = "admin"
-    password = random_password.grafana["enabled"].result
+    username     = "admin"
+    password     = random_password.grafana["enabled"].result
+    namespace    = var.monitoring_namespace
+    service_name = "kube-prometheus-stack-grafana"
+    service_port = 80
+    cluster_host = "kube-prometheus-stack-grafana.${var.monitoring_namespace}.svc.cluster.local"
   } : null
   sensitive = true
 }
 
 output "ops_statefulset_name" {
-  description = "Name of the demo ops StatefulSet. Null when `create_ops_workload = false`."
-  value       = var.create_ops_workload ? kubernetes_stateful_set_v1.ops["enabled"].metadata[0].name : null
+  description = "Name of the demo ops StatefulSet. Null when `enable_ops_workload = false`."
+  value       = var.enable_ops_workload ? kubernetes_stateful_set_v1.ops["enabled"].metadata[0].name : null
 }
