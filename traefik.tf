@@ -10,9 +10,14 @@ resource "helm_release" "traefik" {
   namespace        = var.ingress_controller_namespace
   create_namespace = true
 
+  # Service type is distribution-aware (see `local.traefik_service_type_effective`).
+  # k3s → `LoadBalancer` (klipper-lb assigns the node IP so `helm_release` 's
+  # default `wait = true` passes). minikube → `ClusterIP` (no built-in LB;
+  # External-IP would stay `<pending>` forever and block the release).
+  # Consumers can force any value via `var.traefik_service_type`.
   set {
     name  = "service.type"
-    value = "LoadBalancer"
+    value = local.traefik_service_type_effective
   }
 
   set {

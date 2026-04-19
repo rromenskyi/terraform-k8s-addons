@@ -181,7 +181,18 @@ variable "ops_image" {
 }
 
 variable "ops_storage_class_name" {
-  description = "StorageClass used by the ops StatefulSet's PVC. k3s uses `local-path` (built-in local-path-provisioner); minikube uses `standard`. Set to `null` to rely on the cluster default StorageClass."
+  description = "StorageClass used by the ops StatefulSet's PVC. Leave as `null` to pick the distribution-appropriate built-in: `local-path` on k3s, `standard` on minikube, otherwise the cluster's default StorageClass. Override with any explicit StorageClass name when the operator wants a specific provisioner."
   type        = string
-  default     = "local-path"
+  default     = null
+}
+
+variable "traefik_service_type" {
+  description = "Kubernetes Service type for the Traefik ingress-controller Service. Leave as `null` to pick the distribution-appropriate default: `LoadBalancer` on k3s (klipper-lb assigns the node IP, so `helm --wait` passes), `ClusterIP` on minikube (no built-in LB; External-IP would stay `<pending>` forever and block the release). Override with `NodePort` when an operator wants host-bound ports without klipper-lb or tunnel-style ingress."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.traefik_service_type == null || contains(["LoadBalancer", "ClusterIP", "NodePort"], coalesce(var.traefik_service_type, ""))
+    error_message = "traefik_service_type must be one of LoadBalancer / ClusterIP / NodePort, or null to auto-pick by cluster_distribution."
+  }
 }

@@ -82,6 +82,20 @@ kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
 # → http://localhost:3000  (admin / <password from terraform output>)
 ```
 
+## Distribution-aware defaults
+
+Two inputs default to `null` and pick their effective value from
+`var.cluster_distribution`:
+
+| Input | `cluster_distribution = "k3s"` | `cluster_distribution = "minikube"` | Why |
+|---|---|---|---|
+| `ops_storage_class_name` | `local-path` | `standard` | `local-path-provisioner` is the built-in StorageClass on k3s; `k8s.io/minikube-hostpath` ships under the name `standard` on minikube and is its only default. |
+| `traefik_service_type` | `LoadBalancer` | `ClusterIP` | klipper-lb assigns an external IP on k3s so `helm_release`'s default `wait = true` passes; minikube has no built-in LB so a `LoadBalancer` Service sits in `EXTERNAL-IP: <pending>` until the 5-minute helm timeout. `ClusterIP` is correct when an edge tunnel (cloudflared, Tailscale funnel, ngrok) terminates traffic at the cluster service. |
+
+Consumers who want a specific value (for example, `NodePort` on minikube
+with `minikube tunnel` running out of band) set the input explicitly and
+their value wins unchanged.
+
 ## Provider wiring
 
 The module configures its own `kubernetes` and `helm` providers from

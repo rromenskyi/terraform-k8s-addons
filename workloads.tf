@@ -86,7 +86,7 @@ resource "kubernetes_stateful_set_v1" "ops" {
       }
       spec {
         access_modes       = ["ReadWriteOnce"]
-        storage_class_name = var.ops_storage_class_name
+        storage_class_name = local.ops_storage_class_name_effective
         resources {
           requests = {
             storage = "1Gi"
