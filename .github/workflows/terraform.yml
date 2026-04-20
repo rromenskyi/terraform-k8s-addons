@@ -28,3 +28,22 @@ jobs:
 
     - name: Terraform Validate
       run: terraform validate
+
+    - name: Generate terraform-docs
+      uses: terraform-docs/gh-actions@v1
+      with:
+        working-dir: .
+        output-file: README.md
+        output-method: inject
+        output-format: markdown table
+        config-file: .terraform-docs.yml
+
+    - name: Check for terraform-docs changes
+      run: |
+        git update-index --refresh >/dev/null 2>&1 || true
+        if ! git diff --quiet --exit-code -- README.md; then
+          echo "README.md content differs from terraform-docs output. Please run terraform-docs locally."
+          git diff -- README.md
+          exit 1
+        fi
+        echo "Documentation is up to date."

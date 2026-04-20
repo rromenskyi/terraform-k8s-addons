@@ -15,6 +15,10 @@ repos:
     hooks:
       - id: terraform_fmt
       - id: terraform_validate
+      - id: terraform_docs
+        args:
+          - --args=--output-file=README.md
+          - --args=--output-mode=inject
       - id: terraform_trivy
         args:
           - --args=--severity=HIGH,CRITICAL
