@@ -192,7 +192,14 @@ variable "traefik_service_type" {
   default     = null
 
   validation {
-    condition     = var.traefik_service_type == null || contains(["LoadBalancer", "ClusterIP", "NodePort"], coalesce(var.traefik_service_type, ""))
+    # `coalesce(var.traefik_service_type, "")` used to sit here, but
+    # Terraform's validate-time evaluator walks both sides of the `||`
+    # regardless of short-circuit semantics, and `coalesce(null, "")`
+    # errors with "no non-null, non-empty-string arguments". Drop the
+    # coalesce — `contains(..., null)` returns false, so null alone
+    # satisfies the left side and the right side is never what gates
+    # a null value.
+    condition     = var.traefik_service_type == null || contains(["LoadBalancer", "ClusterIP", "NodePort"], var.traefik_service_type)
     error_message = "traefik_service_type must be one of LoadBalancer / ClusterIP / NodePort, or null to auto-pick by cluster_distribution."
   }
 }
