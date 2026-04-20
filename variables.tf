@@ -192,14 +192,22 @@ variable "traefik_service_type" {
   default     = null
 
   validation {
-    # `coalesce(var.traefik_service_type, "")` used to sit here, but
+    # Two null-fragility gotchas in one line:
+    #   1. `coalesce(var.x, "")` errors when `var.x` is null AND the
+    #      fallback is empty — `coalesce` rejects empty strings too.
+    #   2. `contains(list, null)` errors with "argument must not be
+    #      null" — Terraform's `contains()` does not treat null as a
+    #      plain miss.
     # Terraform's validate-time evaluator walks both sides of the `||`
-    # regardless of short-circuit semantics, and `coalesce(null, "")`
-    # errors with "no non-null, non-empty-string arguments". Drop the
-    # coalesce — `contains(..., null)` returns false, so null alone
-    # satisfies the left side and the right side is never what gates
-    # a null value.
-    condition     = var.traefik_service_type == null || contains(["LoadBalancer", "ClusterIP", "NodePort"], var.traefik_service_type)
+    # regardless of short-circuit semantics, so any null flowing into
+    # either `coalesce` or `contains` fails validation before the
+    # left-hand null check can spare us.
+    #
+    # Fix: `coalesce(var.x, "__unset__")` never errors (fallback is
+    # non-null non-empty), and `"__unset__"` is present in the list so
+    # the null-default case passes. Real invalid values fall through
+    # to the contains-false branch and fail the condition as intended.
+    condition     = contains(["LoadBalancer", "ClusterIP", "NodePort", "__unset__"], coalesce(var.traefik_service_type, "__unset__"))
     error_message = "traefik_service_type must be one of LoadBalancer / ClusterIP / NodePort, or null to auto-pick by cluster_distribution."
   }
 }
