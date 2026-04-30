@@ -73,6 +73,25 @@ resource "helm_release" "traefik" {
           matchRule   = "Host(`traefik.${var.base_domain}`)"
         }
       }
+      # Trust `X-Forwarded-*` from upstream proxies whose source IP
+      # matches one of these CIDRs. Default = loopback only — set
+      # `traefik_trusted_proxies` at the module call to the cluster
+      # pod CIDR (cloudflared and any other in-cluster proxy land
+      # there). Without this, Traefik strips the forwarded scheme
+      # cloudflared sets and downstream auth services emit `http://`
+      # redirect URIs even when the public face is HTTPS.
+      ports = {
+        web = {
+          forwardedHeaders = {
+            trustedIPs = var.traefik_trusted_proxies
+          }
+        }
+        websecure = {
+          forwardedHeaders = {
+            trustedIPs = var.traefik_trusted_proxies
+          }
+        }
+      }
     })
   ]
 }

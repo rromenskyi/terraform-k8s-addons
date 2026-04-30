@@ -110,6 +110,12 @@ variable "traefik_version" {
   default     = "34.2.0"
 }
 
+variable "traefik_trusted_proxies" {
+  description = "CIDRs Traefik trusts to set `X-Forwarded-*` headers on the way in. Without this, Traefik strips inbound forwarded headers and substitutes its own based on the entrypoint scheme — which breaks any downstream service (oauth2-proxy, traefik-forward-auth, …) that builds redirect URLs from `X-Forwarded-Proto`. Default trusts only loopback. Set to the cluster pod CIDR (`10.42.0.0/16` on k3s, `100.72.0.0/16` on minikube — and add the upstream proxy's IP if a CDN like Cloudflare Tunnel is in front: cloudflared pods sit in the cluster CIDR, so the cluster CIDR usually covers it). Applied to both `web` and `websecure` entrypoints."
+  type        = list(string)
+  default     = ["127.0.0.1/32"]
+}
+
 # --------------------------------------------------------------------------
 # cert-manager
 # --------------------------------------------------------------------------
