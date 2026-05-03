@@ -8,10 +8,14 @@ resource "helm_release" "cert_manager" {
   namespace        = var.cert_manager_namespace
   create_namespace = true
 
-  set {
-    name  = "installCRDs"
-    value = "true"
-  }
+  # v3 helm provider: `set` is a list-of-objects attribute, not a
+  # repeating block.
+  set = [
+    {
+      name  = "installCRDs"
+      value = "true"
+    },
+  ]
 
   values = [
     # cert-manager's values.schema.json (v1.14+) keeps `commonLabels` under

@@ -12,7 +12,10 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  # v3 schema: the `kubernetes` configuration is now a nested
+  # attribute (`kubernetes = {}`) instead of a block (`kubernetes {}`).
+  # No semantic change — same `config_path` flows through.
+  kubernetes = {
     config_path = var.kubeconfig_path
   }
 }
