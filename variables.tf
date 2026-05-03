@@ -168,6 +168,52 @@ variable "enable_ops_workload" {
   default     = true
 }
 
+# --------------------------------------------------------------------------
+# kured — Kubernetes Reboot Daemon
+# --------------------------------------------------------------------------
+
+variable "enable_kured" {
+  description = "Deploy kured — a DaemonSet that drains and reboots a node when it observes `/var/run/reboot-required` (the sentinel Ubuntu's unattended-upgrades drops when a kernel/glibc/systemd update needs a reboot to take effect). Without it the operator has to notice the file by hand and reboot manually, or accept that nodes silently run on a stale kernel until the next planned reboot. Default off so existing operators don't get a surprise extra workload until they opt in."
+  type        = bool
+  default     = false
+}
+
+variable "kured_version" {
+  description = "Helm chart version for kubereboot/kured. Pinned so an upstream re-tag doesn't silently change behavior across applies."
+  type        = string
+  default     = "5.6.2"
+}
+
+variable "kured_namespace" {
+  description = "Namespace kured runs in. Defaults to `kube-system` so the DaemonSet's host-level reboot work doesn't compete with tenant ResourceQuotas."
+  type        = string
+  default     = "kube-system"
+}
+
+variable "kured_reboot_days" {
+  description = "Days of week (lowercase) on which kured is allowed to reboot a node. Default = every day; tighten to `[\"sat\", \"sun\"]` if your operator wants kernel reboots to land in the weekend window."
+  type        = list(string)
+  default     = ["su", "mo", "tu", "we", "th", "fr", "sa"]
+}
+
+variable "kured_start_time" {
+  description = "Earliest time-of-day (24h, node-local) kured will start considering nodes for reboot. Pairs with `kured_end_time` to define a maintenance window."
+  type        = string
+  default     = "00:00"
+}
+
+variable "kured_end_time" {
+  description = "Latest time-of-day kured will start a reboot. Set both start and end to `00:00` to allow rebooting around the clock."
+  type        = string
+  default     = "23:59"
+}
+
+variable "kured_time_zone" {
+  description = "Timezone used to interpret `kured_start_time` / `kured_end_time` / `kured_reboot_days`. Defaults to UTC; override with the operator-local zone (e.g. `America/Denver`) to make the maintenance window match wall-clock expectations."
+  type        = string
+  default     = "UTC"
+}
+
 variable "namespace" {
   description = "Namespace for the demo ops StatefulSet. Must appear in `var.namespaces` or be created out-of-band — the StatefulSet depends on the namespace existing."
   type        = string
