@@ -214,6 +214,59 @@ variable "kured_time_zone" {
   default     = "UTC"
 }
 
+# --------------------------------------------------------------------------
+# Argo CD
+# --------------------------------------------------------------------------
+
+variable "enable_argocd" {
+  description = "Deploy Argo CD via the upstream `argo/argo-cd` Helm chart. When enabled, the chart lands a full Argo CD install (server + repo-server + application-controller + redis + dex) in `argocd_namespace`. The chart-side Ingress stays off — consumers wire their own IngressRoute against the `argocd-server` Service to keep ingress concerns in one place. OIDC integration is opt-in via the `argocd_oidc_*` knobs below; with all OIDC inputs empty the install is bare and the only login path is the chart-generated `admin` user."
+  type        = bool
+  default     = false
+}
+
+variable "argocd_version" {
+  description = "Helm chart version for argo/argo-cd. Pinned so an upstream re-tag doesn't silently change behavior across applies."
+  type        = string
+  default     = "8.0.16"
+}
+
+variable "argocd_namespace" {
+  description = "Namespace Argo CD lives in. Defaults to `argocd` — the upstream convention. Override only if a fleet-wide policy requires a different name."
+  type        = string
+  default     = "argocd"
+}
+
+variable "argocd_hostname" {
+  description = "Public hostname Argo CD answers on (e.g. `argocd.example.com`). Embedded as `server.config.url` so generated redirect URIs and webhook callbacks resolve back to the public face. Empty disables the URL config; leave empty when a route hasn't been wired yet."
+  type        = string
+  default     = ""
+}
+
+variable "argocd_oidc_issuer" {
+  description = "OIDC issuer URL for Argo CD's `dex.config.connectors[].config.issuer` shape (e.g. `https://id.example.com`). When set together with `argocd_oidc_client_id` and `argocd_oidc_client_secret`, the chart wires Dex with an OIDC connector and the UI gets a `Sign in with OIDC` button. Empty disables the integration — only the chart's local admin user can log in."
+  type        = string
+  default     = ""
+}
+
+variable "argocd_oidc_client_id" {
+  description = "Client ID for the OIDC application Argo CD uses. Caller is responsible for creating the application in the upstream IdP and propagating the value here. Pairs with `argocd_oidc_client_secret` and `argocd_oidc_issuer`."
+  type        = string
+  default     = ""
+}
+
+variable "argocd_oidc_client_secret" {
+  description = "Client secret for the OIDC application Argo CD uses. Sensitive — the value lands in a Helm-managed Secret inside the cluster. Empty disables the OIDC integration at the chart level."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "argocd_oidc_admin_groups" {
+  description = "List of OIDC group claims (or Zitadel role keys; Zitadel emits roles under the configured groups claim) granted Argo CD's `role:admin` policy. Anyone whose ID token carries one of these groups gets full read/write across every Application/AppProject. Empty list = OIDC users have no permissions until the operator hand-edits the in-cluster ConfigMap."
+  type        = list(string)
+  default     = []
+}
+
 variable "namespace" {
   description = "Namespace for the demo ops StatefulSet. Must appear in `var.namespaces` or be created out-of-band — the StatefulSet depends on the namespace existing."
   type        = string
