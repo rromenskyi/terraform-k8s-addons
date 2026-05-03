@@ -31,35 +31,36 @@ resource "helm_release" "monitoring" {
   # throttling) without masking genuine failures.
   timeout = 900
 
-  set {
-    name  = "grafana.adminPassword"
-    value = random_password.grafana["enabled"].result
-  }
-
-  set {
-    name  = "grafana.enabled"
-    value = "true"
-  }
-
-  # Grafana's chart-side Ingress stays disabled on purpose. This module
-  # ships no public route for Grafana — consumers attach their own
-  # (Ingress, IngressRoute, Gateway API, whatever) to the ClusterIP
-  # Service `kube-prometheus-stack-grafana.<monitoring_namespace>`.
-
-  set {
-    name  = "prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues"
-    value = "false"
-  }
-
-  set {
-    name  = "prometheus.prometheusSpec.resources.requests.cpu"
-    value = "200m"
-  }
-
-  set {
-    name  = "prometheus.prometheusSpec.resources.requests.memory"
-    value = "512Mi"
-  }
+  # v3 helm provider: `set` is a list-of-objects attribute, not a
+  # repeating block. Grouping all overrides into one list keeps the
+  # diff readable on apply.
+  set = [
+    {
+      name  = "grafana.adminPassword"
+      value = random_password.grafana["enabled"].result
+    },
+    {
+      name  = "grafana.enabled"
+      value = "true"
+    },
+    # Grafana's chart-side Ingress stays disabled on purpose. This
+    # module ships no public route for Grafana — consumers attach
+    # their own (Ingress, IngressRoute, Gateway API, whatever) to the
+    # ClusterIP Service
+    # `kube-prometheus-stack-grafana.<monitoring_namespace>`.
+    {
+      name  = "prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues"
+      value = "false"
+    },
+    {
+      name  = "prometheus.prometheusSpec.resources.requests.cpu"
+      value = "200m"
+    },
+    {
+      name  = "prometheus.prometheusSpec.resources.requests.memory"
+      value = "512Mi"
+    },
+  ]
 
   values = [
     yamlencode({
