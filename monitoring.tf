@@ -65,13 +65,24 @@ resource "helm_release" "monitoring" {
   values = [
     yamlencode({
       commonLabels = local.common_labels
-      grafana = {
-        sidecar = {
-          dashboards = {
-            enabled = true
+      # Module-side Grafana defaults — sidecar dashboards enabled
+      # (kube-prometheus-stack ships its dashboard library through
+      # this sidecar). Operator-supplied overrides land via
+      # `var.monitoring_grafana_extra_values` and merge per
+      # top-level key (override wins on conflict). Common operator
+      # cases: `envFromSecret` for OIDC env injection,
+      # `grafana.ini.auth.generic_oauth` for SSO config, persistence
+      # block, plugin list. Module stays opinion-free on those.
+      grafana = merge(
+        {
+          sidecar = {
+            dashboards = {
+              enabled = true
+            }
           }
-        }
-      }
+        },
+        var.monitoring_grafana_extra_values,
+      )
     })
   ]
 }
