@@ -105,9 +105,9 @@ variable "enable_traefik_dashboard" {
 }
 
 variable "traefik_version" {
-  description = "Traefik Helm chart version"
+  description = "Traefik Helm chart version. The chart pins itself to a matching Traefik appVersion via `appVersion`, so chart-version bumps generally also bump the controller binary."
   type        = string
-  default     = "34.2.0"
+  default     = "39.0.9"
 }
 
 # --------------------------------------------------------------------------
@@ -261,5 +261,16 @@ variable "traefik_service_type" {
     # to the contains-false branch and fail the condition as intended.
     condition     = contains(["LoadBalancer", "ClusterIP", "NodePort", "__unset__"], coalesce(var.traefik_service_type, "__unset__"))
     error_message = "traefik_service_type must be one of LoadBalancer / ClusterIP / NodePort, or null to auto-pick by cluster_distribution."
+  }
+}
+
+variable "traefik_external_traffic_policy" {
+  description = "`externalTrafficPolicy` on the Traefik ingress-controller Service. `Cluster` (default) routes packets through any node and SNATs to the node IP — load is balanced cluster-wide, but client source IPs are lost. `Local` routes only to nodes hosting a Traefik pod and preserves source IPs — at the cost of cluster-wide LB. Set to `Local` when an L2 MetalLB VIP is shared with another `externalTrafficPolicy: Local` Service: MetalLB rejects sharing across mismatched policies (documented constraint), so both Services on a shared VIP must agree. `null` leaves the field unset and Kubernetes defaults to `Cluster`."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = contains(["Cluster", "Local", "__unset__"], coalesce(var.traefik_external_traffic_policy, "__unset__"))
+    error_message = "traefik_external_traffic_policy must be one of Cluster / Local, or null to leave unset."
   }
 }
