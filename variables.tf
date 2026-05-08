@@ -158,6 +158,12 @@ variable "kube_prometheus_stack_version" {
   default     = "70.0.0"
 }
 
+variable "monitoring_grafana_extra_values" {
+  description = "Extra values merged into the kube-prometheus-stack chart's `grafana:` block. Use for operator-side overrides this module does not model directly — `envFromSecret` for OIDC env injection, `grafana.ini` config blocks (auth.generic_oauth, dashboards.default_home_dashboard_path), persistence, plugins. Module-side defaults (sidecar.dashboards.enabled = true) stay applied; operator override wins per top-level `grafana:` key. Empty map (default) preserves existing behaviour."
+  type        = any
+  default     = {}
+}
+
 # --------------------------------------------------------------------------
 # Demo ops workload
 # --------------------------------------------------------------------------
