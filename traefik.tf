@@ -68,15 +68,24 @@ resource "helm_release" "traefik" {
   ]
 
   values = [
-    yamlencode({
-      commonLabels = local.common_labels
-      ingressRoute = {
-        dashboard = {
-          enabled     = var.enable_traefik_dashboard
-          entryPoints = ["web"]
-          matchRule   = "Host(`traefik.${var.base_domain}`)"
+    yamlencode(merge(
+      {
+        commonLabels = local.common_labels
+        ingressRoute = {
+          dashboard = {
+            enabled     = var.enable_traefik_dashboard
+            entryPoints = ["web"]
+            matchRule   = "Host(`traefik.${var.base_domain}`)"
+          }
         }
-      }
-    })
+      },
+      var.traefik_external_traffic_policy != null ? {
+        service = {
+          spec = {
+            externalTrafficPolicy = var.traefik_external_traffic_policy
+          }
+        }
+      } : {}
+    ))
   ]
 }

@@ -114,7 +114,7 @@ MIT — see [LICENSE](LICENSE).
 | Name | Version |
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
-| <a name="requirement_helm"></a> [helm](#requirement\_helm) | ~> 2.17 |
+| <a name="requirement_helm"></a> [helm](#requirement\_helm) | ~> 3.0 |
 | <a name="requirement_kubernetes"></a> [kubernetes](#requirement\_kubernetes) | ~> 2.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.0 |
 
@@ -122,7 +122,7 @@ MIT — see [LICENSE](LICENSE).
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_helm"></a> [helm](#provider\_helm) | 2.17.0 |
+| <a name="provider_helm"></a> [helm](#provider\_helm) | 3.1.1 |
 | <a name="provider_kubernetes"></a> [kubernetes](#provider\_kubernetes) | 2.38.0 |
 | <a name="provider_random"></a> [random](#provider\_random) | 3.8.1 |
 
@@ -136,6 +136,7 @@ No modules.
 | ---- | ---- |
 | [helm_release.cert_manager](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [helm_release.cluster_issuers](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
+| [helm_release.kured](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [helm_release.monitoring](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [helm_release.traefik](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [kubernetes_limit_range_v1.namespaces](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/limit_range_v1) | resource |
@@ -154,6 +155,7 @@ No modules.
 | <a name="input_cluster_distribution"></a> [cluster\_distribution](#input\_cluster\_distribution) | Distribution the target cluster runs. Consumed as a label and as context for human-readable outputs. Acceptable values are free-form strings; the sibling cluster modules emit `minikube` or `k3s` via their `cluster_distribution` output. | `string` | `"unknown"` | no |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | Logical name of the target cluster. Propagates into `common_labels` and pins `random_password.grafana.keepers` so provider-version upgrades do not silently rotate the Grafana admin password. Should match the cluster module's `cluster_name`. | `string` | `"tf-local"` | no |
 | <a name="input_enable_cert_manager"></a> [enable\_cert\_manager](#input\_enable\_cert\_manager) | Deploy cert-manager plus Let's Encrypt staging/production `ClusterIssuer`s. Requires `enable_traefik = true` because the HTTP-01 solver template hardcodes ingress class `traefik`. | `bool` | `true` | no |
+| <a name="input_enable_kured"></a> [enable\_kured](#input\_enable\_kured) | Deploy kured — a DaemonSet that drains and reboots a node when it observes `/var/run/reboot-required` (the sentinel Ubuntu's unattended-upgrades drops when a kernel/glibc/systemd update needs a reboot to take effect). Without it the operator has to notice the file by hand and reboot manually, or accept that nodes silently run on a stale kernel until the next planned reboot. Default off so existing operators don't get a surprise extra workload until they opt in. | `bool` | `false` | no |
 | <a name="input_enable_monitoring"></a> [enable\_monitoring](#input\_enable\_monitoring) | Deploy kube-prometheus-stack (Prometheus + Grafana + Alertmanager + node-exporter + kube-state-metrics + operator). This module does NOT publish Grafana on any public hostname; its Service `kube-prometheus-stack-grafana.<monitoring_namespace>` is reachable cluster-internal, and consumers wire their own Ingress/IngressRoute at the domain of their choice. | `bool` | `true` | no |
 | <a name="input_enable_namespace_limits"></a> [enable\_namespace\_limits](#input\_enable\_namespace\_limits) | Apply a default `ResourceQuota` and `LimitRange` to each module-managed namespace. Disable only if quotas are enforced out-of-band. | `bool` | `true` | no |
 | <a name="input_enable_ops_workload"></a> [enable\_ops\_workload](#input\_enable\_ops\_workload) | Create a demo `ops` StatefulSet that exercises the cluster's default StorageClass. Used as a smoke test; safe to disable in production stacks. | `bool` | `true` | no |
@@ -162,6 +164,12 @@ No modules.
 | <a name="input_ingress_controller_namespace"></a> [ingress\_controller\_namespace](#input\_ingress\_controller\_namespace) | Namespace for the Traefik Helm release. Named after the role (not the product) so downstream stacks can address it the same way across distributions. | `string` | `"ingress-controller"` | no |
 | <a name="input_kube_prometheus_stack_version"></a> [kube\_prometheus\_stack\_version](#input\_kube\_prometheus\_stack\_version) | kube-prometheus-stack Helm chart version | `string` | `"70.0.0"` | no |
 | <a name="input_kubeconfig_path"></a> [kubeconfig\_path](#input\_kubeconfig\_path) | Path to the kubeconfig file for the target cluster. Typically wired from `module.<cluster>.kubeconfig_path` where <cluster> is `terraform-minikube-k8s`, `terraform-k3s-k8s`, or any other module exporting that output. The file is opened lazily at API-call time, so it may not exist yet when this module is planned — convenient for single-phase `terraform apply` against a cold cluster. | `string` | n/a | yes |
+| <a name="input_kured_end_time"></a> [kured\_end\_time](#input\_kured\_end\_time) | Latest time-of-day kured will start a reboot. Set both start and end to `00:00` to allow rebooting around the clock. | `string` | `"23:59"` | no |
+| <a name="input_kured_namespace"></a> [kured\_namespace](#input\_kured\_namespace) | Namespace kured runs in. Defaults to `kube-system` so the DaemonSet's host-level reboot work doesn't compete with tenant ResourceQuotas. | `string` | `"kube-system"` | no |
+| <a name="input_kured_reboot_days"></a> [kured\_reboot\_days](#input\_kured\_reboot\_days) | Days of week (lowercase) on which kured is allowed to reboot a node. Default = every day; tighten to `["sat", "sun"]` if your operator wants kernel reboots to land in the weekend window. | `list(string)` | ```[ "su", "mo", "tu", "we", "th", "fr", "sa" ]``` | no |
+| <a name="input_kured_start_time"></a> [kured\_start\_time](#input\_kured\_start\_time) | Earliest time-of-day (24h, node-local) kured will start considering nodes for reboot. Pairs with `kured_end_time` to define a maintenance window. | `string` | `"00:00"` | no |
+| <a name="input_kured_time_zone"></a> [kured\_time\_zone](#input\_kured\_time\_zone) | Timezone used to interpret `kured_start_time` / `kured_end_time` / `kured_reboot_days`. Defaults to UTC; override with the operator-local zone (e.g. `America/Denver`) to make the maintenance window match wall-clock expectations. | `string` | `"UTC"` | no |
+| <a name="input_kured_version"></a> [kured\_version](#input\_kured\_version) | Helm chart version for kubereboot/kured. Pinned so an upstream re-tag doesn't silently change behavior across applies. | `string` | `"5.6.2"` | no |
 | <a name="input_letsencrypt_email"></a> [letsencrypt\_email](#input\_letsencrypt\_email) | Email registered with Let's Encrypt (required when `enable_cert_manager = true`). Must be a real mailbox — Let's Encrypt rate-limits RFC-2606 reserved domains (example.com, example.org, example.net, example.invalid, test, localhost). | `string` | `"admin@example.com"` | no |
 | <a name="input_monitoring_namespace"></a> [monitoring\_namespace](#input\_monitoring\_namespace) | Namespace for the kube-prometheus-stack Helm release (Prometheus / Grafana / Alertmanager / node-exporter / kube-state-metrics / operator). The module does not publish Grafana on a public hostname — downstream stacks wire their own Ingress/IngressRoute at the `kube-prometheus-stack-grafana` Service in this namespace. | `string` | `"monitoring"` | no |
 | <a name="input_namespace"></a> [namespace](#input\_namespace) | Namespace for the demo ops StatefulSet. Must appear in `var.namespaces` or be created out-of-band — the StatefulSet depends on the namespace existing. | `string` | `"ops"` | no |
@@ -169,8 +177,9 @@ No modules.
 | <a name="input_namespaces"></a> [namespaces](#input\_namespaces) | Namespaces the module creates with PodSecurity labels, a default `ResourceQuota`, and a default `LimitRange`. Helm-managed namespaces (`cert_manager_namespace`, `ingress_controller_namespace`, `monitoring_namespace`) are NOT in this list because the charts create them — chart-managed namespaces intentionally skip our PodSecurity labels since some workloads need privileged pods (kube-prometheus-stack's node-exporter, cert-manager's webhook, …). | `list(string)` | ```[ "ops" ]``` | no |
 | <a name="input_ops_image"></a> [ops\_image](#input\_ops\_image) | Container image for the ops demo workload | `string` | `"alpine:3.20"` | no |
 | <a name="input_ops_storage_class_name"></a> [ops\_storage\_class\_name](#input\_ops\_storage\_class\_name) | StorageClass used by the ops StatefulSet's PVC. Leave as `null` to pick the distribution-appropriate built-in: `local-path` on k3s, `standard` on minikube, otherwise the cluster's default StorageClass. Override with any explicit StorageClass name when the operator wants a specific provisioner. | `string` | `null` | no |
+| <a name="input_traefik_external_traffic_policy"></a> [traefik\_external\_traffic\_policy](#input\_traefik\_external\_traffic\_policy) | `externalTrafficPolicy` on the Traefik ingress-controller Service. `Cluster` (default) routes packets through any node and SNATs to the node IP — load is balanced cluster-wide, but client source IPs are lost. `Local` routes only to nodes hosting a Traefik pod and preserves source IPs — at the cost of cluster-wide LB. Set to `Local` when an L2 MetalLB VIP is shared with another `externalTrafficPolicy: Local` Service: MetalLB rejects sharing across mismatched policies (documented constraint), so both Services on a shared VIP must agree. `null` leaves the field unset and Kubernetes defaults to `Cluster`. | `string` | `null` | no |
 | <a name="input_traefik_service_type"></a> [traefik\_service\_type](#input\_traefik\_service\_type) | Kubernetes Service type for the Traefik ingress-controller Service. Leave as `null` to pick the distribution-appropriate default: `LoadBalancer` on k3s (klipper-lb assigns the node IP, so `helm --wait` passes), `ClusterIP` on minikube (no built-in LB; External-IP would stay `<pending>` forever and block the release). Override with `NodePort` when an operator wants host-bound ports without klipper-lb or tunnel-style ingress. | `string` | `null` | no |
-| <a name="input_traefik_version"></a> [traefik\_version](#input\_traefik\_version) | Traefik Helm chart version | `string` | `"34.2.0"` | no |
+| <a name="input_traefik_version"></a> [traefik\_version](#input\_traefik\_version) | Traefik Helm chart version. The chart pins itself to a matching Traefik appVersion via `appVersion`, so chart-version bumps generally also bump the controller binary. | `string` | `"39.0.9"` | no |
 
 ## Outputs
 
