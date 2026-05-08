@@ -33,10 +33,13 @@ resource "helm_release" "traefik" {
       name  = "ports.websecure.port"
       value = "443"
     },
-    {
-      name  = "ports.websecure.tls.enabled"
-      value = "true"
-    },
+    # `ports.websecure.tls.enabled = true` is the chart-side default
+    # for the `websecure` entrypoint, so we do not set it explicitly.
+    # Chart 39.x added stricter values-schema validation that rejects
+    # the explicit set as `Additional property tls is not allowed`
+    # under `ports.websecure` despite the same path being valid in
+    # 34.x. Behavior is unchanged either way — leaving TLS termination
+    # on the websecure entrypoint enabled by chart default.
     # Let the Traefik chart own the `traefik` IngressClass. Creating
     # an identically-named `kubernetes_ingress_class_v1` ourselves
     # would conflict with the chart's install-time ownership check
