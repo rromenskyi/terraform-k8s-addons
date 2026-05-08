@@ -14,7 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `var.ops_storage_class_name` default changes from the hardcoded `"local-path"` to `null`. When `null`, the effective value is now distribution-aware: `local-path` on k3s (built-in local-path-provisioner), `standard` on minikube (`k8s.io/minikube-hostpath` — the only StorageClass minikube ships). Consumers on k3s see no behavioural change; consumers on minikube no longer need the per-root workaround `ops_storage_class_name = "standard"`. Explicit overrides still win unchanged
-- `var.traefik_version` default bumped from `34.2.0` to `39.0.9`. Chart values used by this module (`service.type`, `ports.web*`, `ingressClass.*`, `providers.kubernetesCRD.allowCrossNamespace`) remain valid in 39.x — diff against 34.2.0 is comments and additive fields. App-version side: 34.2.0 ships Traefik v3.2.x; 39.0.9 ships Traefik v3.6.15. Consumers pinning an older chart explicitly via `traefik_version` see no change
 
 ## [1.0.0] - 2026-04-19
 

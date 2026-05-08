@@ -105,9 +105,9 @@ variable "enable_traefik_dashboard" {
 }
 
 variable "traefik_version" {
-  description = "Traefik Helm chart version. The chart pins itself to a matching Traefik appVersion via `appVersion`, so chart-version bumps generally also bump the controller binary."
+  description = "Traefik Helm chart version"
   type        = string
-  default     = "39.0.9"
+  default     = "34.2.0"
 }
 
 # --------------------------------------------------------------------------
