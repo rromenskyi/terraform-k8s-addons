@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Drop the explicit `ports.websecure.tls.enabled = true` chart-set entry from `traefik.tf`. Chart 39.x ships a stricter values schema that rejects this path as "Additional property tls is not allowed" under `ports.websecure`, despite 34.x accepting it. The chart-side default for the `websecure` entrypoint is already `tls.enabled: true` so behavior is unchanged on both chart versions, and consumers on chart 39.x stop hitting `Error upgrading chart: values don't meet the specifications of the schema(s)` on `terraform apply`
+
 ### Added
 - `var.traefik_service_type` (default `null`) lets the consumer pin the Traefik Service type. When left `null`, the effective value is distribution-aware: `LoadBalancer` on `cluster_distribution = "k3s"` (klipper-lb assigns the node IP, so the default `helm_release` `wait = true` returns immediately) and `ClusterIP` on `minikube` (no built-in LB; a `LoadBalancer` Service would sit in `EXTERNAL-IP: <pending>` forever and block the release until its 5-minute timeout). `NodePort` is also accepted for operators who want host-bound ports without klipper-lb or an edge tunnel. Behaviour on k3s is unchanged for consumers that do not set the new input
 - `var.monitoring_grafana_extra_values` (default `{}`) — extra values merged into the `kube-prometheus-stack` chart's `grafana:` block. Module-side defaults (`sidecar.dashboards.enabled = true`) stay applied; operator override wins per top-level `grafana:` key. Use for `envFromSecret` (OIDC env injection from a consumer-emitted Secret), `grafana.ini.auth.generic_oauth` SSO config, persistence, plugins. Module stays opinion-free on those concerns
