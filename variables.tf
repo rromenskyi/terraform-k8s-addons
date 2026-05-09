@@ -274,3 +274,32 @@ variable "traefik_external_traffic_policy" {
     error_message = "traefik_external_traffic_policy must be one of Cluster / Local, or null to leave unset."
   }
 }
+
+variable "traefik_deployment_kind" {
+  description = "Workload kind for the Traefik chart. `Deployment` (default) is the chart default — N replicas in `Deployment.spec.replicas`, scheduled freely by the kube-scheduler with optional anti-affinity. `DaemonSet` runs one Traefik pod per eligible node — useful when the cluster has a per-node `LoadBalancer` Service (or `NodePort`) per region/edge and each node needs a local Traefik to terminate the path with `externalTrafficPolicy: Local`. `null` leaves the chart default in place. Note: `DaemonSet` ignores any `replicas` setting and respects pod-level tolerations/nodeSelector to determine eligible nodes."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = contains(["Deployment", "DaemonSet", "__unset__"], coalesce(var.traefik_deployment_kind, "__unset__"))
+    error_message = "traefik_deployment_kind must be one of Deployment / DaemonSet, or null to leave unset."
+  }
+}
+
+variable "traefik_tolerations" {
+  description = "Tolerations applied to Traefik pods. Required for the pod to land on tainted nodes (e.g. dedicated edge / app-specific tier nodes that the `DaemonSet` should also cover). Standard k8s toleration shape. Empty list (default) leaves the chart default in place — Traefik lands only on un-tainted nodes."
+  type = list(object({
+    key                = optional(string)
+    operator           = optional(string, "Exists")
+    value              = optional(string)
+    effect             = optional(string)
+    toleration_seconds = optional(number)
+  }))
+  default = []
+}
+
+variable "traefik_node_selector" {
+  description = "Node selector applied to Traefik pods. Restricts where Traefik schedules — set when only a subset of nodes should run Traefik (e.g. label `workload-tier: edge` on nodes that handle external ingress). Empty map (default) leaves the chart default in place — no restriction."
+  type        = map(string)
+  default     = {}
+}

@@ -88,7 +88,18 @@ resource "helm_release" "traefik" {
             externalTrafficPolicy = var.traefik_external_traffic_policy
           }
         }
-      } : {}
+      } : {},
+      var.traefik_deployment_kind != null ? {
+        deployment = {
+          kind = var.traefik_deployment_kind
+        }
+      } : {},
+      length(var.traefik_tolerations) > 0 ? {
+        tolerations = var.traefik_tolerations
+      } : {},
+      length(var.traefik_node_selector) > 0 ? {
+        nodeSelector = var.traefik_node_selector
+      } : {},
     ))
   ]
 }
