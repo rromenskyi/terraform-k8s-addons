@@ -142,6 +142,22 @@ variable "letsencrypt_email" {
   }
 }
 
+variable "dns01_cloudflare_api_token_secret_name" {
+  description = "Name of a Secret in `cert_manager_namespace` whose `api-token` data key carries a Cloudflare API token scoped to `Zone → DNS → Edit` on the zones in `dns01_cloudflare_dns_zones`. Operator-provisioned (the addons module does not create the Secret itself — keeps the upstream module out of the operator's CF credential pipeline). Empty string skips the dns01 solver entirely, leaving the LE ClusterIssuers HTTP-01-only as in v2.3.0."
+  type        = string
+  default     = ""
+}
+
+variable "dns01_cloudflare_dns_zones" {
+  description = "DNS zones the Cloudflare DNS-01 solver applies to (cert-manager `selector.dnsZones` filter). HTTP-01 stays the default for hosts outside these zones — DNS-01 only kicks in when a Certificate's DNS name falls under one of these zones. Required when `dns01_cloudflare_api_token_secret_name` is set; ignored when empty."
+  type        = list(string)
+  default     = []
+  validation {
+    condition     = length(var.dns01_cloudflare_dns_zones) == 0 || alltrue([for z in var.dns01_cloudflare_dns_zones : can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$", z))])
+    error_message = "dns01_cloudflare_dns_zones entries must be valid DNS apex names (lowercase, e.g. `example.com`)."
+  }
+}
+
 # --------------------------------------------------------------------------
 # Monitoring
 # --------------------------------------------------------------------------
