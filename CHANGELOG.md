@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Optional Cloudflare DNS-01 solver on the Let's Encrypt ClusterIssuers via two new module variables — `dns01_cloudflare_api_token_secret_name` (Secret in `cert_manager_namespace` carrying the CF API token under data key `api-token`, operator-provisioned) and `dns01_cloudflare_dns_zones` (zones the solver applies to, gated by cert-manager's `selector.dnsZones`). HTTP-01 stays the default for hosts outside the listed zones. Both vars must be either both empty (HTTP-01 only, v2.3.0 behaviour) or both non-empty — partial coverage is rejected at plan time. Required for Certificates on hosts that can't satisfy HTTP-01 (direct LB endpoints with no port-80 listener, e.g. UDP/raw-TCP services not behind traefik)
+
 ### Fixed
 - Drop the explicit `ports.websecure.tls.enabled = true` chart-set entry from `traefik.tf`. Chart 39.x ships a stricter values schema that rejects this path as "Additional property tls is not allowed" under `ports.websecure`, despite 34.x accepting it. The chart-side default for the `websecure` entrypoint is already `tls.enabled: true` so behavior is unchanged on both chart versions, and consumers on chart 39.x stop hitting `Error upgrading chart: values don't meet the specifications of the schema(s)` on `terraform apply`
 

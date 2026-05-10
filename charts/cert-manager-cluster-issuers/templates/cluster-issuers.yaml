@@ -16,6 +16,16 @@ spec:
       - http01:
           ingress:
             class: traefik
+      {{- if and .Values.dns01.cloudflare.apiTokenSecretName .Values.dns01.cloudflare.dnsZones }}
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: {{ .Values.dns01.cloudflare.apiTokenSecretName | quote }}
+              key: api-token
+        selector:
+          dnsZones:
+{{ toYaml .Values.dns01.cloudflare.dnsZones | indent 12 }}
+      {{- end }}
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -35,3 +45,13 @@ spec:
       - http01:
           ingress:
             class: traefik
+      {{- if and .Values.dns01.cloudflare.apiTokenSecretName .Values.dns01.cloudflare.dnsZones }}
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: {{ .Values.dns01.cloudflare.apiTokenSecretName | quote }}
+              key: api-token
+        selector:
+          dnsZones:
+{{ toYaml .Values.dns01.cloudflare.dnsZones | indent 12 }}
+      {{- end }}

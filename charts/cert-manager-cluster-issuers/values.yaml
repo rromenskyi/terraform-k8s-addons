@@ -1,2 +1,23 @@
 commonLabels: {}
 letsencrypt_email: admin@example.com
+
+# Optional Cloudflare DNS-01 solver. Hosts whose zone matches `dnsZones`
+# resolve their ACME challenge via DNS TXT records (no HTTP listener
+# needed) — useful for direct-LB endpoints (UDP/raw-TCP services that
+# don't sit behind traefik). HTTP-01 stays the default for everything
+# outside `dnsZones`.
+#
+# Both fields must be non-empty for the dns01 solver to render. Empty
+# values skip the dns01 entry entirely (chart stays HTTP-01 only —
+# backwards-compatible with v2.3.0 consumers).
+dns01:
+  cloudflare:
+    # Name of a Secret in the chart's release namespace
+    # (`cert_manager_namespace`) carrying the Cloudflare API token under
+    # data key `api-token`. Operator provisions the Secret separately;
+    # the chart only references it.
+    apiTokenSecretName: ""
+    # DNS zones the dns01 solver applies to. cert-manager's
+    # `selector.dnsZones` filter — only certs for hosts under these
+    # zones get the dns01 path.
+    dnsZones: []

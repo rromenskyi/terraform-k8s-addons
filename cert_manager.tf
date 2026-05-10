@@ -46,6 +46,12 @@ resource "helm_release" "cluster_issuers" {
     yamlencode({
       commonLabels      = local.common_labels
       letsencrypt_email = var.letsencrypt_email
+      dns01 = {
+        cloudflare = {
+          apiTokenSecretName = var.dns01_cloudflare_api_token_secret_name
+          dnsZones           = var.dns01_cloudflare_dns_zones
+        }
+      }
     })
   ]
 
@@ -53,6 +59,14 @@ resource "helm_release" "cluster_issuers" {
     precondition {
       condition     = var.enable_traefik
       error_message = "Let's Encrypt ClusterIssuers require Traefik — the HTTP-01 solver template hardcodes ingress class 'traefik'. Set enable_traefik = true or disable cert-manager."
+    }
+    # Partial coverage of the dns01 vars silently skips the solver — the
+    # chart `{{ if and ... }}` guard renders nothing when either field is
+    # empty. Caller probably meant to enable DNS-01 if they set one but
+    # not the other; surface that as a clear error.
+    precondition {
+      condition     = (var.dns01_cloudflare_api_token_secret_name == "") == (length(var.dns01_cloudflare_dns_zones) == 0)
+      error_message = "dns01_cloudflare_api_token_secret_name and dns01_cloudflare_dns_zones must be either both empty (HTTP-01 only) or both non-empty (HTTP-01 + Cloudflare DNS-01). Setting one without the other silently skips the solver."
     }
   }
 }
