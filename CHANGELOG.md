@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `monitoring_prometheus_extra_values` (`any`, default `{}`) — extra values deep-merged into the kube-prometheus-stack chart's `prometheus:` block, mirroring the grafana/alertmanager passthroughs. The motivating case is pinning `prometheusSpec.externalUrl` so a metric alert's `Source`/generator link resolves to a browser-reachable host instead of the in-cluster Service name. The module-set `prometheusSpec.resources` requests stay applied. Empty map preserves existing behaviour
+
+## [2.4.1] - 2026-06-27
+
+### Added
 - `monitoring_alertmanager_extra_values` (`any`, default `{}`) — extra values deep-merged into the kube-prometheus-stack chart's `alertmanager:` block, mirroring `monitoring_grafana_extra_values`. The motivating case is pinning `alertmanagerSpec.externalUrl` so notification links (the email "View in Alertmanager" button, generator URLs) resolve to a browser-reachable host instead of the in-cluster Service name. Empty map preserves existing behaviour
 
 ## [2.4.0] - 2026-05-09

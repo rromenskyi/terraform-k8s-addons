@@ -186,6 +186,12 @@ variable "monitoring_alertmanager_extra_values" {
   default     = {}
 }
 
+variable "monitoring_prometheus_extra_values" {
+  description = "Extra values merged into the kube-prometheus-stack chart's `prometheus:` block. Use for operator-side overrides this module does not model directly — most commonly `prometheusSpec.externalUrl` so an alert's `Source`/generator link resolves to a browser-reachable host instead of the in-cluster Service name. Helm deep-merges over the chart defaults (the module-set `prometheusSpec.resources` requests stay applied), so unset keys keep chart behaviour. Empty map (default) preserves existing behaviour."
+  type        = any
+  default     = {}
+}
+
 # --------------------------------------------------------------------------
 # Demo ops workload
 # --------------------------------------------------------------------------

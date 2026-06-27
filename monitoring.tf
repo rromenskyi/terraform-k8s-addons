@@ -89,6 +89,12 @@ resource "helm_release" "monitoring" {
       # `alertmanagerSpec.externalUrl` so notification links resolve to a
       # browser-reachable host instead of the in-cluster Service name.
       alertmanager = var.monitoring_alertmanager_extra_values
+      # Operator-supplied Prometheus overrides. Helm deep-merges over the
+      # chart's `prometheus:` block (the `prometheusSpec.resources` requests
+      # set above stay applied), so an empty map is a no-op. Typical use: pin
+      # `prometheusSpec.externalUrl` so an alert's Source/generator link
+      # resolves to a browser-reachable host instead of the Service name.
+      prometheus = var.monitoring_prometheus_extra_values
     })
   ]
 }
