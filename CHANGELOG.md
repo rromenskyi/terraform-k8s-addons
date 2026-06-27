@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `monitoring_alertmanager_extra_values` (`any`, default `{}`) — extra values deep-merged into the kube-prometheus-stack chart's `alertmanager:` block, mirroring `monitoring_grafana_extra_values`. The motivating case is pinning `alertmanagerSpec.externalUrl` so notification links (the email "View in Alertmanager" button, generator URLs) resolve to a browser-reachable host instead of the in-cluster Service name. Empty map preserves existing behaviour
+
+## [2.4.0] - 2026-05-09
+
+### Added
 - Optional Cloudflare DNS-01 solver on the Let's Encrypt ClusterIssuers via two new module variables — `dns01_cloudflare_api_token_secret_name` (Secret in `cert_manager_namespace` carrying the CF API token under data key `api-token`, operator-provisioned) and `dns01_cloudflare_dns_zones` (zones the solver applies to, gated by cert-manager's `selector.dnsZones`). HTTP-01 stays the default for hosts outside the listed zones. Both vars must be either both empty (HTTP-01 only, v2.3.0 behaviour) or both non-empty — partial coverage is rejected at plan time. Required for Certificates on hosts that can't satisfy HTTP-01 (direct LB endpoints with no port-80 listener, e.g. UDP/raw-TCP services not behind traefik)
 
 ### Fixed

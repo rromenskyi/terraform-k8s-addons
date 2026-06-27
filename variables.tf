@@ -180,6 +180,12 @@ variable "monitoring_grafana_extra_values" {
   default     = {}
 }
 
+variable "monitoring_alertmanager_extra_values" {
+  description = "Extra values merged into the kube-prometheus-stack chart's `alertmanager:` block. Use for operator-side overrides this module does not model directly — most commonly `alertmanagerSpec.externalUrl` so notification links (the email \"View in Alertmanager\" button, generator URLs) resolve to a browser-reachable host instead of the in-cluster Service name. Helm deep-merges over the chart defaults, so unset keys keep chart behaviour. Empty map (default) preserves existing behaviour."
+  type        = any
+  default     = {}
+}
+
 # --------------------------------------------------------------------------
 # Demo ops workload
 # --------------------------------------------------------------------------

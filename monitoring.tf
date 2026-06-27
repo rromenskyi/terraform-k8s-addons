@@ -83,6 +83,12 @@ resource "helm_release" "monitoring" {
         },
         var.monitoring_grafana_extra_values,
       )
+      # Operator-supplied Alertmanager overrides (no module-side
+      # defaults). Helm deep-merges this over the chart's `alertmanager:`
+      # block, so an empty map is a no-op. Typical use: pin
+      # `alertmanagerSpec.externalUrl` so notification links resolve to a
+      # browser-reachable host instead of the in-cluster Service name.
+      alertmanager = var.monitoring_alertmanager_extra_values
     })
   ]
 }
