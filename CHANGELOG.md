@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-09-26
+
+### Added
+- `kured_tolerations` (list of toleration objects, default = the chart's own control-plane/master `NoSchedule` pair) — tolerations for the kured DaemonSet. kured only reboots nodes it runs on, so a node carrying a taint it didn't tolerate (e.g. a custom `node-role.kubernetes.io/edge` taint) was silently exempt from coordinated drain + lock reboots and left to reboot on its own. Pass `[{ operator = "Exists" }]` to run kured on every node. Default preserves existing behaviour
+
+## [2.4.2] - 2026-06-27
+
 ### Added
 - `monitoring_prometheus_extra_values` (`any`, default `{}`) — extra values deep-merged into the kube-prometheus-stack chart's `prometheus:` block, mirroring the grafana/alertmanager passthroughs. The motivating case is pinning `prometheusSpec.externalUrl` so a metric alert's `Source`/generator link resolves to a browser-reachable host instead of the in-cluster Service name. The module-set `prometheusSpec.resources` requests stay applied. Empty map preserves existing behaviour
 
