@@ -242,6 +242,20 @@ variable "kured_end_time" {
   default     = "23:59"
 }
 
+variable "kured_tolerations" {
+  description = "Tolerations for the kured DaemonSet. kured only reboots nodes it runs on, so a node taint it doesn't tolerate silently exempts that node from coordinated (drain + cluster-wide lock) reboots — leaving it to reboot on its own schedule, possibly alongside another node. Default mirrors the chart's own (control-plane / master NoSchedule); pass `[{ operator = \"Exists\" }]` to run on every node regardless of taints."
+  type = list(object({
+    key      = optional(string)
+    operator = optional(string)
+    value    = optional(string)
+    effect   = optional(string)
+  }))
+  default = [
+    { key = "node-role.kubernetes.io/control-plane", effect = "NoSchedule" },
+    { key = "node-role.kubernetes.io/master", effect = "NoSchedule" },
+  ]
+}
+
 variable "kured_time_zone" {
   description = "Timezone used to interpret `kured_start_time` / `kured_end_time` / `kured_reboot_days`. Defaults to UTC; override with the operator-local zone (e.g. `America/Denver`) to make the maintenance window match wall-clock expectations."
   type        = string

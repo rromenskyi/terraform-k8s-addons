@@ -40,6 +40,11 @@ resource "helm_release" "kured" {
       metrics = {
         create = true
       }
+      # Null optional attributes stripped so the chart doesn't render
+      # `value: null` / `operator: null` into the pod spec.
+      tolerations = [
+        for t in var.kured_tolerations : { for k, v in t : k => v if v != null }
+      ]
     })
   ]
 }
