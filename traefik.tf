@@ -1,5 +1,40 @@
+# Helm installs a chart's `crds/` once and never upgrades them, so a
+# chart bump alone leaves Traefik on the CRDs of the first install.
+# Render them from the pinned chart version and server-side apply them
+# (the chart's own upgrade guide does the same with kubectl). Note: if
+# this module is called with a module-level `depends_on`, Terraform defers
+# this data source to apply while the dependency has pending changes and
+# the for_each below fails at plan.
+data "helm_template" "traefik_crds" {
+  for_each = var.enable_traefik ? toset(["enabled"]) : toset([])
+
+  name         = "traefik"
+  namespace    = var.ingress_controller_namespace
+  repository   = "https://traefik.github.io/charts"
+  chart        = "traefik"
+  version      = var.traefik_version
+  include_crds = true
+  # Offline render: without a cluster Helm assumes an old Kubernetes and
+  # the chart's kubeVersion constraint (>= 1.25) rejects it. The value
+  # only satisfies that check; CRD content doesn't depend on it.
+  kube_version = "1.30.0"
+}
+
+resource "kubectl_manifest" "traefik_crds" {
+  for_each = {
+    for doc in try(data.helm_template.traefik_crds["enabled"].crds, []) :
+    yamldecode(doc).metadata.name => doc
+  }
+
+  yaml_body         = each.value
+  server_side_apply = true
+  force_conflicts   = true
+}
+
 resource "helm_release" "traefik" {
   for_each = var.enable_traefik ? toset(["enabled"]) : toset([])
+
+  depends_on = [kubectl_manifest.traefik_crds]
 
   name       = "traefik"
   repository = "https://traefik.github.io/charts"
@@ -14,17 +49,6 @@ resource "helm_release" "traefik" {
   # repeating block. Comments preserved inline against the relevant
   # entries for context.
   set = [
-    # Service type is distribution-aware (see
-    # `local.traefik_service_type_effective`). k3s → `LoadBalancer`
-    # (klipper-lb assigns the node IP so `helm_release`'s default
-    # `wait = true` passes). minikube → `ClusterIP` (no built-in LB;
-    # External-IP would stay `<pending>` forever and block the
-    # release). Consumers can force any value via
-    # `var.traefik_service_type`.
-    {
-      name  = "service.type"
-      value = local.traefik_service_type_effective
-    },
     {
       name  = "ports.web.port"
       value = "80"
@@ -74,6 +98,23 @@ resource "helm_release" "traefik" {
     yamlencode(merge(
       {
         commonLabels = local.common_labels
+        # Service type is distribution-aware (see
+        # `local.traefik_service_type_effective`). k3s → `LoadBalancer`
+        # (klipper-lb assigns the node IP so `helm_release`'s default
+        # `wait = true` passes). minikube → `ClusterIP` (no built-in LB;
+        # External-IP would stay `<pending>` forever and block the
+        # release). Consumers can force any value via
+        # `var.traefik_service_type`. Chart 41 dropped `service.type`; the
+        # type now goes into `service.spec`, together with the optional
+        # externalTrafficPolicy (one map, since merge() is shallow).
+        service = {
+          spec = merge(
+            { type = local.traefik_service_type_effective },
+            var.traefik_external_traffic_policy != null ? {
+              externalTrafficPolicy = var.traefik_external_traffic_policy
+            } : {},
+          )
+        }
         ingressRoute = {
           dashboard = {
             enabled     = var.enable_traefik_dashboard
@@ -82,13 +123,6 @@ resource "helm_release" "traefik" {
           }
         }
       },
-      var.traefik_external_traffic_policy != null ? {
-        service = {
-          spec = {
-            externalTrafficPolicy = var.traefik_external_traffic_policy
-          }
-        }
-      } : {},
       var.traefik_deployment_kind != null ? {
         deployment = {
           kind = var.traefik_deployment_kind
