@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.0] - 2026-10-01
+
+### Changed
+- On `cluster_distribution = "k3s"` the kube-prometheus-stack `kubeControllerManager`, `kubeScheduler`, `kubeProxy` and `kubeEtcd` components are disabled: k3s embeds them with localhost-only metrics, so their targets never came up and the `*Down` alerts fired permanently.
+
 ## [2.9.0] - 2026-10-01
 
 ### Changed
