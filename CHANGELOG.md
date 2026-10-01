@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-10-01
+
+### Changed
+- `kured_version` default `5.6.2` → `6.1.0` (kured 1.23.0). The chart's only 5.x → 6.x break concerns `serviceAccount.extraAnnotations`, which this module doesn't set.
+
 ## [2.5.0] - 2026-09-26
 
 ### Added
