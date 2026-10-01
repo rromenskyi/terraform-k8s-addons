@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-10-01
+
+### Changed
+- `traefik_version` default `39.0.9` → `41.6.1` (Traefik v3.6 → v3.7).
+- The Service type moves to `service.spec.type`: chart 41 removed `service.type` and silently defaults the Service to `LoadBalancer`, so the old setting would have been ignored.
+- Traefik CRDs are now kept in sync with the chart: rendered from the pinned chart version and server-side applied before the release (Helm installs `crds/` once and never upgrades them). Requires the `gavinbunney/kubectl` provider. Don't call the module with a module-level `depends_on`: Terraform would defer the CRD render to apply and the plan would fail.
+
 ## [2.6.0] - 2026-10-01
 
 ### Changed
