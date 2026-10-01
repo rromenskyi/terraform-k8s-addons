@@ -39,7 +39,10 @@ resource "helm_release" "traefik" {
   name       = "traefik"
   repository = "https://traefik.github.io/charts"
   chart      = "traefik"
-  version    = var.traefik_version
+  # Helm keeps one Secret per revision; each holds the full rendered
+  # manifest, so unbounded history slowly fills etcd.
+  max_history = 3
+  version     = var.traefik_version
   # The ingress controller lives in a role-named namespace so downstream
   # stacks can address it identically regardless of distribution.
   namespace        = var.ingress_controller_namespace

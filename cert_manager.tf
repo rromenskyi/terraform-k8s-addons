@@ -1,9 +1,12 @@
 resource "helm_release" "cert_manager" {
   for_each = var.enable_cert_manager ? toset(["enabled"]) : toset([])
 
-  name             = "cert-manager"
-  repository       = "https://charts.jetstack.io"
-  chart            = "cert-manager"
+  name       = "cert-manager"
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager"
+  # Helm keeps one Secret per revision; each holds the full rendered
+  # manifest, so unbounded history slowly fills etcd.
+  max_history      = 3
   version          = var.cert_manager_version
   namespace        = var.cert_manager_namespace
   create_namespace = true
@@ -36,8 +39,11 @@ resource "helm_release" "cluster_issuers" {
   for_each   = var.enable_cert_manager ? toset(["enabled"]) : toset([])
   depends_on = [helm_release.cert_manager]
 
-  name             = "cert-manager-cluster-issuers"
-  chart            = "${path.module}/charts/cert-manager-cluster-issuers"
+  name  = "cert-manager-cluster-issuers"
+  chart = "${path.module}/charts/cert-manager-cluster-issuers"
+  # Helm keeps one Secret per revision; each holds the full rendered
+  # manifest, so unbounded history slowly fills etcd.
+  max_history      = 3
   namespace        = var.cert_manager_namespace
   create_namespace = true
 

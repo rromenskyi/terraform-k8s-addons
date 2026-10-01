@@ -1,9 +1,12 @@
 resource "helm_release" "kured" {
   for_each = var.enable_kured ? toset(["enabled"]) : toset([])
 
-  name             = "kured"
-  repository       = "https://kubereboot.github.io/charts/"
-  chart            = "kured"
+  name       = "kured"
+  repository = "https://kubereboot.github.io/charts/"
+  chart      = "kured"
+  # Helm keeps one Secret per revision; each holds the full rendered
+  # manifest, so unbounded history slowly fills etcd.
+  max_history      = 3
   version          = var.kured_version
   namespace        = var.kured_namespace
   create_namespace = false # Default `kube-system` always exists; override at your own risk.
