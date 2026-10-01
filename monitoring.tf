@@ -103,7 +103,18 @@ resource "helm_release" "monitoring" {
       # `prometheusSpec.externalUrl` so an alert's Source/generator link
       # resolves to a browser-reachable host instead of the Service name.
       prometheus = var.monitoring_prometheus_extra_values
-    })
+    }),
+    # k3s runs the controller-manager, scheduler, proxy and etcd inside the
+    # single k3s process with metrics bound to localhost, so the chart's
+    # scrape targets never come up and their `*Down` alerts fire forever.
+    # Turning the components off drops both the ServiceMonitors and the
+    # matching alert rules.
+    var.cluster_distribution == "k3s" ? yamlencode({
+      kubeControllerManager = { enabled = false }
+      kubeScheduler         = { enabled = false }
+      kubeProxy             = { enabled = false }
+      kubeEtcd              = { enabled = false }
+    }) : "{}",
   ]
 }
 
