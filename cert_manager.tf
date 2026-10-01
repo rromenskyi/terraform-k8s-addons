@@ -8,15 +8,6 @@ resource "helm_release" "cert_manager" {
   namespace        = var.cert_manager_namespace
   create_namespace = true
 
-  # v3 helm provider: `set` is a list-of-objects attribute, not a
-  # repeating block.
-  set = [
-    {
-      name  = "installCRDs"
-      value = "true"
-    },
-  ]
-
   values = [
     # cert-manager's values.schema.json (v1.14+) keeps `commonLabels` under
     # `global.`, not at the root. Passing it at the root is rejected with
@@ -24,6 +15,14 @@ resource "helm_release" "cert_manager" {
     # fails to plan. The local `cluster_issuers` chart below is our own —
     # its schema stays flat.
     yamlencode({
+      # The chart templates its CRDs (so `helm upgrade` keeps them current)
+      # and keeps them on uninstall, so removing the release never deletes
+      # every Certificate. Replaces the deprecated `installCRDs`, which
+      # meant the same thing.
+      crds = {
+        enabled = true
+        keep    = true
+      }
       global = {
         commonLabels = local.common_labels
       }

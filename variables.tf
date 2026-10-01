@@ -123,7 +123,7 @@ variable "enable_cert_manager" {
 variable "cert_manager_version" {
   description = "cert-manager Helm chart version"
   type        = string
-  default     = "v1.16.1"
+  default     = "v1.21.2"
 }
 
 variable "letsencrypt_email" {

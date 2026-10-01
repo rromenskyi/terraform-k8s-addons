@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-10-01
+
+### Changed
+- `cert_manager_version` default `v1.16.1` → `v1.21.2`. cert-manager recommends upgrading one minor version at a time: from an older release, pass `cert_manager_version` through each minor (v1.17, v1.18, v1.19, v1.20) before taking the default.
+- CRDs are installed with `crds.enabled` + `crds.keep` instead of the deprecated `installCRDs` (same behaviour).
+
 ## [2.7.0] - 2026-10-01
 
 ### Changed
