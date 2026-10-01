@@ -65,6 +65,14 @@ resource "helm_release" "monitoring" {
   values = [
     yamlencode({
       commonLabels = local.common_labels
+      # Helm never upgrades the CRDs in the chart's `crds/`; this
+      # pre-upgrade hook Job server-side applies the CRDs of the chart
+      # version being installed, so a chart bump brings its CRDs along.
+      crds = {
+        upgradeJob = {
+          enabled = true
+        }
+      }
       # Module-side Grafana defaults — sidecar dashboards enabled
       # (kube-prometheus-stack ships its dashboard library through
       # this sidecar). Operator-supplied overrides land via
