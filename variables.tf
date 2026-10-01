@@ -171,7 +171,7 @@ variable "enable_monitoring" {
 variable "kube_prometheus_stack_version" {
   description = "kube-prometheus-stack Helm chart version"
   type        = string
-  default     = "70.0.0"
+  default     = "91.8.2"
 }
 
 variable "monitoring_grafana_extra_values" {

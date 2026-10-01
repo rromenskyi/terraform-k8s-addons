@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-10-01
+
+### Changed
+- `kube_prometheus_stack_version` default `70.0.0` → `91.8.2` (Prometheus Operator v0.94, Prometheus 3.15, Alertmanager 0.34, Grafana 13). Read the chart's UPGRADE.md for 71.x–91.x when overriding the values this module doesn't set; the defaults used here need no changes.
+- The chart's CRD upgrade Job (`crds.upgradeJob.enabled`) is on, so a chart bump also upgrades the Prometheus Operator CRDs (Helm never upgrades `crds/` itself).
+
 ## [2.8.0] - 2026-10-01
 
 ### Changed
