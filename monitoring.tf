@@ -61,7 +61,7 @@ resource "helm_release" "monitoring" {
     },
     {
       name  = "prometheus.prometheusSpec.resources.requests.memory"
-      value = "512Mi"
+      value = var.monitoring_prometheus_memory_request
     },
   ]
 

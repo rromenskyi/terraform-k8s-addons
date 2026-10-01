@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.12.0] - 2026-10-01
+
+### Added
+- `monitoring_prometheus_memory_request` (default `512Mi`, unchanged behaviour) to size the Prometheus memory request.
+
 ## [2.11.0] - 2026-10-01
 
 ### Changed
