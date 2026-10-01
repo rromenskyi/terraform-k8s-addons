@@ -215,7 +215,7 @@ variable "enable_kured" {
 variable "kured_version" {
   description = "Helm chart version for kubereboot/kured. Pinned so an upstream re-tag doesn't silently change behavior across applies."
   type        = string
-  default     = "5.6.2"
+  default     = "6.1.0"
 }
 
 variable "kured_namespace" {
