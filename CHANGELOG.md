@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.11.0] - 2026-10-01
+
+### Changed
+- Every Helm release sets `max_history = 3`. Helm stores each revision as a Secret holding the full rendered manifest; unbounded history slowly filled etcd.
+
 ## [2.10.0] - 2026-10-01
 
 ### Changed

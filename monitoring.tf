@@ -14,9 +14,12 @@ resource "random_password" "grafana" {
 resource "helm_release" "monitoring" {
   for_each = var.enable_monitoring ? toset(["enabled"]) : toset([])
 
-  name             = "kube-prometheus-stack"
-  repository       = "https://prometheus-community.github.io/helm-charts"
-  chart            = "kube-prometheus-stack"
+  name       = "kube-prometheus-stack"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "kube-prometheus-stack"
+  # Helm keeps one Secret per revision; each holds the full rendered
+  # manifest, so unbounded history slowly fills etcd.
+  max_history      = 3
   version          = var.kube_prometheus_stack_version
   namespace        = var.monitoring_namespace
   create_namespace = true
