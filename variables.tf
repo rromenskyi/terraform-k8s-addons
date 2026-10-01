@@ -186,6 +186,12 @@ variable "monitoring_alertmanager_extra_values" {
   default     = {}
 }
 
+variable "monitoring_prometheus_memory_request" {
+  description = "Memory request for the Prometheus server container. Size it to the observed working set (it grows with series count and retention): an under-sized request lets the scheduler pack the node as if Prometheus were small. Set here rather than through `monitoring_prometheus_extra_values` because the module pins this key with a Helm `set`, which wins over values."
+  type        = string
+  default     = "512Mi"
+}
+
 variable "monitoring_prometheus_extra_values" {
   description = "Extra values merged into the kube-prometheus-stack chart's `prometheus:` block. Use for operator-side overrides this module does not model directly — most commonly `prometheusSpec.externalUrl` so an alert's `Source`/generator link resolves to a browser-reachable host instead of the in-cluster Service name. Helm deep-merges over the chart defaults (the module-set `prometheusSpec.resources` requests stay applied), so unset keys keep chart behaviour. Empty map (default) preserves existing behaviour."
   type        = any
