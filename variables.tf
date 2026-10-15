@@ -192,6 +192,23 @@ variable "monitoring_prometheus_memory_request" {
   default     = "512Mi"
 }
 
+variable "monitoring_kubelet_samples_alert_threshold" {
+  description = "On k3s: samples per kubelet `/metrics` scrape (after relabeling) above which `KubeletMetricsIncludeControlPlane` fires. A kubelet's own metrics are about 3,000 samples; the control plane's families, which a k3s server's kubelet endpoint also serves, add tens of thousands."
+  type        = number
+  default     = 10000
+}
+
+variable "monitoring_head_series_budget" {
+  description = "Series in a Prometheus head block above which `PrometheusHeadSeriesOverBudget` fires (for 1 h). Prometheus memory grows with it. 0 (default) = no alert."
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.monitoring_head_series_budget >= 0
+    error_message = "monitoring_head_series_budget must be 0 (off) or a positive number of series."
+  }
+}
+
 variable "monitoring_prometheus_extra_values" {
   description = "Extra values merged into the kube-prometheus-stack chart's `prometheus:` block. Use for operator-side overrides this module does not model directly — most commonly `prometheusSpec.externalUrl` so an alert's `Source`/generator link resolves to a browser-reachable host instead of the in-cluster Service name. Helm deep-merges over the chart defaults (the module-set `prometheusSpec.resources` requests stay applied), so unset keys keep chart behaviour. Empty map (default) preserves existing behaviour."
   type        = any

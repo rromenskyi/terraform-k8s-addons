@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.13.0] - 2026-10-15
+
+### Changed
+- On `cluster_distribution = "k3s"` the kubelet ServiceMonitor drops the control plane's metric families (`apiserver_*`, `etcd_*`, `scheduler_*`, …). k3s runs the whole control plane in one process whose kubelet `/metrics` and apiserver `/metrics` serve the same registry, so every server's control-plane series were stored twice (about 70,000 series per server); they are now stored once, from the apiserver job. The chart's own default kubelet relabeling is kept.
+
+### Added
+- `KubeletMetricsIncludeControlPlane` alert on k3s: a kubelet `/metrics` scrape returns more than `monitoring_kubelet_samples_alert_threshold` samples (default 10,000; a kubelet's own metrics are about 3,000), i.e. a control-plane family the drop list does not cover is stored twice.
+- `monitoring_head_series_budget`: `PrometheusHeadSeriesOverBudget` fires when a Prometheus head block holds more series for 1 h. 0 (default) = no alert.
+
 ## [2.12.0] - 2026-10-01
 
 ### Added
