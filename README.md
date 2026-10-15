@@ -96,6 +96,17 @@ Consumers who want a specific value (for example, `NodePort` on minikube
 with `minikube tunnel` running out of band) set the input explicitly and
 their value wins unchanged.
 
+### Metrics on k3s
+
+k3s runs the control plane in one process. Its kubelet `/metrics` and its
+apiserver `/metrics` serve the same registry, so the kubelet job of every
+k3s server would store all apiserver, etcd and scheduler series a second
+time. On `cluster_distribution = "k3s"` the kubelet job drops those families
+(`k3s_control_plane_metrics_regex` in `monitoring.tf`); the apiserver job
+keeps them. If a later k3s or Kubernetes version adds a family the list does
+not cover, `KubeletMetricsIncludeControlPlane` fires (a kubelet scrape over
+`monitoring_kubelet_samples_alert_threshold` samples). Extend the regex then.
+
 ## Provider wiring
 
 The module configures its own `kubernetes` and `helm` providers from
@@ -115,6 +126,7 @@ MIT — see [LICENSE](LICENSE).
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
 | <a name="requirement_helm"></a> [helm](#requirement\_helm) | ~> 3.0 |
+| <a name="requirement_kubectl"></a> [kubectl](#requirement\_kubectl) | ~> 1.14 |
 | <a name="requirement_kubernetes"></a> [kubernetes](#requirement\_kubernetes) | ~> 2.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.0 |
 
@@ -123,6 +135,7 @@ MIT — see [LICENSE](LICENSE).
 | Name | Version |
 | ---- | ------- |
 | <a name="provider_helm"></a> [helm](#provider\_helm) | 3.1.1 |
+| <a name="provider_kubectl"></a> [kubectl](#provider\_kubectl) | 1.19.0 |
 | <a name="provider_kubernetes"></a> [kubernetes](#provider\_kubernetes) | 2.38.0 |
 | <a name="provider_random"></a> [random](#provider\_random) | 3.8.1 |
 
@@ -139,11 +152,13 @@ No modules.
 | [helm_release.kured](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [helm_release.monitoring](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [helm_release.traefik](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
+| [kubectl_manifest.traefik_crds](https://registry.terraform.io/providers/gavinbunney/kubectl/latest/docs/resources/manifest) | resource |
 | [kubernetes_limit_range_v1.namespaces](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/limit_range_v1) | resource |
 | [kubernetes_namespace_v1.namespaces](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/namespace_v1) | resource |
 | [kubernetes_resource_quota_v1.namespaces](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/resource_quota_v1) | resource |
 | [kubernetes_stateful_set_v1.ops](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/stateful_set_v1) | resource |
 | [random_password.grafana](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
+| [helm_template.traefik_crds](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/data-sources/template) | data source |
 
 ## Inputs
 
@@ -176,8 +191,11 @@ No modules.
 | <a name="input_letsencrypt_email"></a> [letsencrypt\_email](#input\_letsencrypt\_email) | Email registered with Let's Encrypt (required when `enable_cert_manager = true`). Must be a real mailbox — Let's Encrypt rate-limits RFC-2606 reserved domains (example.com, example.org, example.net, example.invalid, test, localhost). | `string` | `"admin@example.com"` | no |
 | <a name="input_monitoring_alertmanager_extra_values"></a> [monitoring\_alertmanager\_extra\_values](#input\_monitoring\_alertmanager\_extra\_values) | Extra values merged into the kube-prometheus-stack chart's `alertmanager:` block. Use for operator-side overrides this module does not model directly — most commonly `alertmanagerSpec.externalUrl` so notification links (the email "View in Alertmanager" button, generator URLs) resolve to a browser-reachable host instead of the in-cluster Service name. Helm deep-merges over the chart defaults, so unset keys keep chart behaviour. Empty map (default) preserves existing behaviour. | `any` | `{}` | no |
 | <a name="input_monitoring_grafana_extra_values"></a> [monitoring\_grafana\_extra\_values](#input\_monitoring\_grafana\_extra\_values) | Extra values merged into the kube-prometheus-stack chart's `grafana:` block. Use for operator-side overrides this module does not model directly — `envFromSecret` for OIDC env injection, `grafana.ini` config blocks (auth.generic\_oauth, dashboards.default\_home\_dashboard\_path), persistence, plugins. Module-side defaults (sidecar.dashboards.enabled = true) stay applied; operator override wins per top-level `grafana:` key. Empty map (default) preserves existing behaviour. | `any` | `{}` | no |
+| <a name="input_monitoring_head_series_budget"></a> [monitoring\_head\_series\_budget](#input\_monitoring\_head\_series\_budget) | Series in a Prometheus head block above which `PrometheusHeadSeriesOverBudget` fires (for 1 h). Prometheus memory grows with it. 0 (default) = no alert. | `number` | `0` | no |
+| <a name="input_monitoring_kubelet_samples_alert_threshold"></a> [monitoring\_kubelet\_samples\_alert\_threshold](#input\_monitoring\_kubelet\_samples\_alert\_threshold) | On k3s: samples per kubelet `/metrics` scrape (after relabeling) above which `KubeletMetricsIncludeControlPlane` fires. A kubelet's own metrics are about 3,000 samples; the control plane's families, which a k3s server's kubelet endpoint also serves, add tens of thousands. | `number` | `10000` | no |
 | <a name="input_monitoring_namespace"></a> [monitoring\_namespace](#input\_monitoring\_namespace) | Namespace for the kube-prometheus-stack Helm release (Prometheus / Grafana / Alertmanager / node-exporter / kube-state-metrics / operator). The module does not publish Grafana on a public hostname — downstream stacks wire their own Ingress/IngressRoute at the `kube-prometheus-stack-grafana` Service in this namespace. | `string` | `"monitoring"` | no |
 | <a name="input_monitoring_prometheus_extra_values"></a> [monitoring\_prometheus\_extra\_values](#input\_monitoring\_prometheus\_extra\_values) | Extra values merged into the kube-prometheus-stack chart's `prometheus:` block. Use for operator-side overrides this module does not model directly — most commonly `prometheusSpec.externalUrl` so an alert's `Source`/generator link resolves to a browser-reachable host instead of the in-cluster Service name. Helm deep-merges over the chart defaults (the module-set `prometheusSpec.resources` requests stay applied), so unset keys keep chart behaviour. Empty map (default) preserves existing behaviour. | `any` | `{}` | no |
+| <a name="input_monitoring_prometheus_memory_request"></a> [monitoring\_prometheus\_memory\_request](#input\_monitoring\_prometheus\_memory\_request) | Memory request for the Prometheus server container. Size it to the observed working set (it grows with series count and retention): an under-sized request lets the scheduler pack the node as if Prometheus were small. Set here rather than through `monitoring_prometheus_extra_values` because the module pins this key with a Helm `set`, which wins over values. | `string` | `"512Mi"` | no |
 | <a name="input_namespace"></a> [namespace](#input\_namespace) | Namespace for the demo ops StatefulSet. Must appear in `var.namespaces` or be created out-of-band — the StatefulSet depends on the namespace existing. | `string` | `"ops"` | no |
 | <a name="input_namespace_pod_security_level"></a> [namespace\_pod\_security\_level](#input\_namespace\_pod\_security\_level) | Pod Security Standards level applied to module-managed namespaces (enforce + audit + warn). `baseline` is safe for most workloads. `restricted` is strictest and may break charts requiring privileged pods. `privileged` effectively disables enforcement. | `string` | `"baseline"` | no |
 | <a name="input_namespaces"></a> [namespaces](#input\_namespaces) | Namespaces the module creates with PodSecurity labels, a default `ResourceQuota`, and a default `LimitRange`. Helm-managed namespaces (`cert_manager_namespace`, `ingress_controller_namespace`, `monitoring_namespace`) are NOT in this list because the charts create them — chart-managed namespaces intentionally skip our PodSecurity labels since some workloads need privileged pods (kube-prometheus-stack's node-exporter, cert-manager's webhook, …). | `list(string)` | ```[ "ops" ]``` | no |

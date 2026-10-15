@@ -112,13 +112,83 @@ resource "helm_release" "monitoring" {
     # scrape targets never come up and their `*Down` alerts fire forever.
     # Turning the components off drops both the ServiceMonitors and the
     # matching alert rules.
+    #
+    # The same single process serves one metrics registry on both the
+    # kubelet's `/metrics` and the apiserver's `/metrics`, so on a k3s server
+    # every apiserver/etcd/scheduler series was stored twice. The kubelet job
+    # drops the control-plane families; the apiserver job keeps them.
     var.cluster_distribution == "k3s" ? yamlencode({
       kubeControllerManager = { enabled = false }
       kubeScheduler         = { enabled = false }
       kubeProxy             = { enabled = false }
       kubeEtcd              = { enabled = false }
+      kubelet = {
+        serviceMonitor = {
+          # Helm replaces lists, so the chart's own default comes along.
+          metricRelabelings = concat(local.kubelet_chart_metric_relabelings, [{
+            sourceLabels = ["__name__"]
+            regex        = local.k3s_control_plane_metrics_regex
+            action       = "drop"
+          }])
+        }
+      }
+    }) : "{}",
+    length(local.monitoring_guard_rule_groups) > 0 ? yamlencode({
+      additionalPrometheusRulesMap = {
+        "monitoring-guards" = { groups = local.monitoring_guard_rule_groups }
+      }
     }) : "{}",
   ]
+}
+
+locals {
+  # kube-prometheus-stack's default `kubelet.serviceMonitor.metricRelabelings`
+  # (chart 91.8.2). Keep in step with the chart when bumping it.
+  kubelet_chart_metric_relabelings = [{
+    sourceLabels = ["__name__", "le"]
+    regex        = "(csi_operations|storage_operation_duration)_seconds_bucket;(0.25|2.5|15|25|120|600)(\\.0)?"
+    action       = "drop"
+  }]
+
+  # Metric families of the k3s control plane that a k3s server's kubelet
+  # endpoint serves on top of the kubelet's own: the families a server's
+  # kubelet exposes and an agent's does not (measured on k3s v1.37). The
+  # `KubeletMetricsIncludeControlPlane` alert below catches a family a later
+  # version adds.
+  k3s_control_plane_metrics_regex = "(apiserver|etcd|scheduler|apiextensions|aggregator|authorization|authentication|authenticated|watch_cache|field_validation|lasso|grpc|kube_apiserver|serviceaccount|pod_security|node_authorizer|version)_.*"
+
+  monitoring_guard_rule_groups = concat(
+    var.cluster_distribution == "k3s" ? [{
+      name = "k3s-kubelet-metrics"
+      rules = [{
+        alert = "KubeletMetricsIncludeControlPlane"
+        expr  = "max by (node) (scrape_samples_post_metric_relabeling{job=\"kubelet\",metrics_path=\"/metrics\"}) > ${var.monitoring_kubelet_samples_alert_threshold}"
+        for   = "30m"
+        labels = {
+          severity = "warning"
+        }
+        annotations = {
+          summary     = "The kubelet on {{ $labels.node }} returns {{ $value }} samples per scrape"
+          description = "A kubelet's own metrics are a few thousand samples. On k3s the kubelet endpoint also serves the control plane's metrics, and this module drops their families from the kubelet job (they are stored once, from the apiserver). More samples than this means a new control-plane family leaks in and is stored twice: extend `k3s_control_plane_metrics_regex` in terraform-k8s-addons."
+        }
+      }]
+    }] : [],
+    var.monitoring_head_series_budget > 0 ? [{
+      name = "prometheus-series-budget"
+      rules = [{
+        alert = "PrometheusHeadSeriesOverBudget"
+        expr  = "max by (pod) (prometheus_tsdb_head_series) > ${var.monitoring_head_series_budget}"
+        for   = "1h"
+        labels = {
+          severity = "warning"
+        }
+        annotations = {
+          summary     = "Prometheus {{ $labels.pod }} holds {{ $value }} series, over the budget of ${var.monitoring_head_series_budget}"
+          description = "Prometheus memory grows with the number of series. Find what grew (Prometheus UI, Status → TSDB status, or count by (__name__) over the last day) and drop it at the scrape, or raise the budget."
+        }
+      }]
+    }] : [],
+  )
 }
 
 # Grafana has no Ingress here on purpose. The chart's Service
