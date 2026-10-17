@@ -198,6 +198,12 @@ variable "monitoring_kubelet_samples_alert_threshold" {
   default     = 10000
 }
 
+variable "monitoring_apiserver_drop_metrics" {
+  description = "Metric names the apiserver ServiceMonitor drops (exact names, e.g. `apiserver_watch_list_duration_seconds_bucket`). The apiserver's histograms carry a series per resource type, so every CRD adds to them; the ones no chart rule or dashboard reads can go. The chart's own default apiserver relabeling is kept. Empty (default) = chart behaviour."
+  type        = list(string)
+  default     = []
+}
+
 variable "monitoring_head_series_budget" {
   description = "Series in a Prometheus head block above which `PrometheusHeadSeriesOverBudget` fires (for 1 h). Prometheus memory grows with it. 0 (default) = no alert."
   type        = number
