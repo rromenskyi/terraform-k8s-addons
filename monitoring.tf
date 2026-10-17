@@ -133,6 +133,18 @@ resource "helm_release" "monitoring" {
         }
       }
     }) : "{}",
+    length(var.monitoring_apiserver_drop_metrics) > 0 ? yamlencode({
+      kubeApiServer = {
+        serviceMonitor = {
+          # Helm replaces lists, so the chart's own default comes along.
+          metricRelabelings = concat(local.apiserver_chart_metric_relabelings, [{
+            sourceLabels = ["__name__"]
+            regex        = "(${join("|", var.monitoring_apiserver_drop_metrics)})"
+            action       = "drop"
+          }])
+        }
+      }
+    }) : "{}",
     length(local.monitoring_guard_rule_groups) > 0 ? yamlencode({
       additionalPrometheusRulesMap = {
         "monitoring-guards" = { groups = local.monitoring_guard_rule_groups }
@@ -147,6 +159,14 @@ locals {
   kubelet_chart_metric_relabelings = [{
     sourceLabels = ["__name__", "le"]
     regex        = "(csi_operations|storage_operation_duration)_seconds_bucket;(0.25|2.5|15|25|120|600)(\\.0)?"
+    action       = "drop"
+  }]
+
+  # kube-prometheus-stack's default `kubeApiServer.serviceMonitor.metricRelabelings`
+  # (chart 91.8.2). Keep in step with the chart when bumping it.
+  apiserver_chart_metric_relabelings = [{
+    sourceLabels = ["__name__", "le"]
+    regex        = "(etcd_request|apiserver_request_slo|apiserver_request_sli|apiserver_request)_duration_seconds_bucket;(0\\.15|0\\.2|0\\.3|0\\.35|0\\.4|0\\.45|0\\.6|0\\.7|0\\.8|0\\.9|1\\.25|1\\.5|1\\.75|2|3|3\\.5|4|4\\.5|6|7|8|9|15|20|40|45|50)(\\.0)?"
     action       = "drop"
   }]
 

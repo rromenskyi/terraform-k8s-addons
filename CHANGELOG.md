@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `monitoring_apiserver_drop_metrics`: metric names the apiserver ServiceMonitor drops, on top of the chart's default apiserver relabeling. The apiserver's histograms carry a series per resource type, so every CRD adds to them; the ones no chart rule or dashboard reads can go (on a k3s cluster with ~100 CRDs, nine such histograms were ~115,000 series).
+
 ## [2.13.0] - 2026-10-15
 
 ### Changed
