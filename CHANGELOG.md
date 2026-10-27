@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.14.1] - 2026-10-27
+
+### Changed
+- Traefik chart 41.7.1 (Traefik v3.7.14), cert-manager v1.21.3.
+
 ## [2.14.0] - 2026-10-17
 
 ### Added
