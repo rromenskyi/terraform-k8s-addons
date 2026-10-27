@@ -107,7 +107,7 @@ variable "enable_traefik_dashboard" {
 variable "traefik_version" {
   description = "Traefik Helm chart version. The chart pins itself to a matching Traefik appVersion via `appVersion`, so chart-version bumps generally also bump the controller binary."
   type        = string
-  default     = "41.6.1"
+  default     = "41.7.1"
 }
 
 # --------------------------------------------------------------------------
@@ -123,7 +123,7 @@ variable "enable_cert_manager" {
 variable "cert_manager_version" {
   description = "cert-manager Helm chart version"
   type        = string
-  default     = "v1.21.2"
+  default     = "v1.21.3"
 }
 
 variable "letsencrypt_email" {
@@ -300,7 +300,7 @@ variable "namespace" {
 variable "ops_image" {
   description = "Container image for the ops demo workload"
   type        = string
-  default     = "alpine:3.20"
+  default     = "alpine:3.24"
 }
 
 variable "ops_storage_class_name" {
