@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.14.1] - 2026-10-27
 
 ### Changed
-- Traefik chart 41.7.1 (Traefik v3.7.14), cert-manager v1.21.3, ops demo workload on `alpine:3.24`.
+- Traefik chart 41.7.1 (a minor chart bump: Traefik v3.7.14, plus Hub and Gateway-scoping features left off), cert-manager v1.21.3, ops demo workload on `alpine:3.24`.
 
 ## [2.14.0] - 2026-10-17
 
