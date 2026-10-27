@@ -300,7 +300,7 @@ variable "namespace" {
 variable "ops_image" {
   description = "Container image for the ops demo workload"
   type        = string
-  default     = "alpine:3.20"
+  default     = "alpine:3.24"
 }
 
 variable "ops_storage_class_name" {
