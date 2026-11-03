@@ -286,7 +286,7 @@ variable "kured_tolerations" {
 }
 
 variable "kured_prometheus_url" {
-  description = "Base URL of the Prometheus (or Prometheus-compatible query API, e.g. Thanos, VictoriaMetrics) kured asks for firing alerts before each reboot, e.g. `http://prometheus.monitoring.svc:9090`. Not Alertmanager. If the query fails, kured treats the reboot as blocked, so an unreachable Prometheus pauses reboots. Set together with `kured_blocking_alerts`; empty disables the check."
+  description = "Base URL of the Prometheus (or Prometheus-compatible query API, e.g. Thanos, VictoriaMetrics) kured asks for active (pending or firing) alerts before each reboot, e.g. `http://prometheus.monitoring.svc:9090`. Not Alertmanager. If the query fails, kured treats the reboot as blocked, so an unreachable Prometheus pauses reboots. Set together with `kured_blocking_alerts`; empty disables the check."
   type        = string
   default     = ""
 
@@ -297,7 +297,7 @@ variable "kured_prometheus_url" {
 }
 
 variable "kured_blocking_alerts" {
-  description = "Alert names that hold kured's reboots while any of them is firing, so a node is not rebooted while the cluster has not recovered from the previous one (storage resyncing, a database replica down, a node still NotReady). Matched exactly; other alerts do not block. Empty (default) or an empty `kured_prometheus_url` turns the check off."
+  description = "Alert names that hold kured's reboots while any of them is pending or firing, so a node is not rebooted while the cluster has not recovered from the previous one (storage resyncing, a database replica down, a node still NotReady). Matched exactly; other alerts do not block. Keep the list to alerts with a meaningful `for:` that resolve on recovery: one that flaps in and out of pending holds reboots indefinitely. Empty (default) or an empty `kured_prometheus_url` turns the check off."
   type        = list(string)
   default     = []
 
