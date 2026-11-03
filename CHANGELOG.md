@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.15.1] - 2026-11-03
+
+### Fixed
+- kured: pending blocking alerts also hold reboots. Right after a node comes back, a resync alert is still inside its `for:` window and only pending, so the firing-only check of 2.15.0 let the next reboot through.
+
 ## [2.15.0] - 2026-11-03
 
 ### Added

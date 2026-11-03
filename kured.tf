@@ -37,14 +37,15 @@ resource "helm_release" "kured" {
   values = [
     yamlencode({
       commonLabels = local.common_labels
-      # Reboots wait while one of `kured_blocking_alerts` fires: kured asks
-      # Prometheus for firing alerts and, with match-only, blocks only on the
-      # names in the regexp (everything else is ignored).
+      # Reboots wait while one of `kured_blocking_alerts` is pending or
+      # firing: kured asks Prometheus for active alerts and, with match-only,
+      # blocks only on the names in the regexp (everything else is ignored).
+      # Pending counts too (alertFiringOnly stays false): right after a node
+      # comes back, a resync alert is still inside its `for:` window.
       configuration = local.kured_block_on_alerts ? {
         prometheusUrl        = var.kured_prometheus_url
         alertFilterRegexp    = "^(${join("|", var.kured_blocking_alerts)})$"
         alertFilterMatchOnly = true
-        alertFiringOnly      = true
       } : {}
       # `metrics` are off by default in the chart; flip them on so
       # the kube-prometheus-stack ServiceMonitor (when present)

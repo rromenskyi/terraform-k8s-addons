@@ -297,7 +297,7 @@ variable "kured_prometheus_url" {
 }
 
 variable "kured_blocking_alerts" {
-  description = "Alert names that hold kured's reboots while any of them is firing, so a node is not rebooted while the cluster has not recovered from the previous one (storage resyncing, a database replica down, a node still NotReady). Matched exactly; other alerts do not block. Empty (default) or an empty `kured_prometheus_url` turns the check off."
+  description = "Alert names that hold kured's reboots while any of them is pending or firing, so a node is not rebooted while the cluster has not recovered from the previous one (storage resyncing, a database replica down, a node still NotReady). Matched exactly; other alerts do not block. Empty (default) or an empty `kured_prometheus_url` turns the check off."
   type        = list(string)
   default     = []
 
