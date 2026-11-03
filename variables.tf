@@ -285,6 +285,23 @@ variable "kured_tolerations" {
   ]
 }
 
+variable "kured_prometheus_url" {
+  description = "Prometheus (or Alertmanager-compatible Prometheus API) URL kured queries before each reboot, e.g. `http://prometheus.monitoring.svc:9090`. Empty disables the check. Only used together with `kured_blocking_alerts`."
+  type        = string
+  default     = ""
+}
+
+variable "kured_blocking_alerts" {
+  description = "Alert names that hold kured's reboots while any of them is firing, so a node is not rebooted while the cluster has not recovered from the previous one (storage resyncing, a database replica down, a node still NotReady). Matched exactly; other alerts do not block. Empty (default) or an empty `kured_prometheus_url` turns the check off."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for a in var.kured_blocking_alerts : can(regex("^[A-Za-z_:][A-Za-z0-9_:]*$", a))])
+    error_message = "kured_blocking_alerts must be Prometheus alert names (letters, digits, `_`, `:`)."
+  }
+}
+
 variable "kured_time_zone" {
   description = "Timezone used to interpret `kured_start_time` / `kured_end_time` / `kured_reboot_days`. Defaults to UTC; override with the operator-local zone (e.g. `America/Denver`) to make the maintenance window match wall-clock expectations."
   type        = string
