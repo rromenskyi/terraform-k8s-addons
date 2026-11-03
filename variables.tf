@@ -286,9 +286,14 @@ variable "kured_tolerations" {
 }
 
 variable "kured_prometheus_url" {
-  description = "Prometheus (or Alertmanager-compatible Prometheus API) URL kured queries before each reboot, e.g. `http://prometheus.monitoring.svc:9090`. Empty disables the check. Only used together with `kured_blocking_alerts`."
+  description = "Base URL of the Prometheus (or Prometheus-compatible query API, e.g. Thanos, VictoriaMetrics) kured asks for firing alerts before each reboot, e.g. `http://prometheus.monitoring.svc:9090`. Not Alertmanager. If the query fails, kured treats the reboot as blocked, so an unreachable Prometheus pauses reboots. Set together with `kured_blocking_alerts`; empty disables the check."
   type        = string
   default     = ""
+
+  validation {
+    condition     = (var.kured_prometheus_url == "") == (length(var.kured_blocking_alerts) == 0)
+    error_message = "Set kured_prometheus_url and kured_blocking_alerts together (both empty disables the reboot check)."
+  }
 }
 
 variable "kured_blocking_alerts" {

@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- kured: `kured_prometheus_url` and `kured_blocking_alerts` hold reboots while any of the listed alerts fires, so the next node is not rebooted before the cluster has recovered from the previous one. Off by default.
+- kured: `kured_prometheus_url` and `kured_blocking_alerts` hold reboots while any of the listed alerts fires, so the next node is not rebooted before the cluster has recovered from the previous one. A failed Prometheus query also holds the reboot (kured's behaviour). Off by default.
 
 ## [2.14.1] - 2026-10-27
 
