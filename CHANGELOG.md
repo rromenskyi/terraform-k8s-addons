@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.16.0] - 2026-11-05
+
+### Added
+- `monitoring_disabled_default_rules`: names of kube-prometheus-stack built-in alert rules to switch off (`defaultRules.disabled`), for rules that do not fit a cluster. Empty by default.
+
 ## [2.15.1] - 2026-11-03
 
 ### Fixed

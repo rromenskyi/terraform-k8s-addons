@@ -204,6 +204,17 @@ variable "monitoring_apiserver_drop_metrics" {
   default     = []
 }
 
+variable "monitoring_disabled_default_rules" {
+  description = "Names of kube-prometheus-stack's built-in alert rules to switch off (`defaultRules.disabled`), e.g. `NodeBondingDegraded` on nodes whose bonds keep cable-less standby ports. The rule is not evaluated at all, unlike muting it in Alertmanager, where it still fires. Empty (default) = all chart rules on."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for a in var.monitoring_disabled_default_rules : can(regex("^[A-Za-z_:][A-Za-z0-9_:]*$", a))])
+    error_message = "monitoring_disabled_default_rules must be Prometheus alert names (letters, digits, `_`, `:`)."
+  }
+}
+
 variable "monitoring_head_series_budget" {
   description = "Series in a Prometheus head block above which `PrometheusHeadSeriesOverBudget` fires (for 1 h). Prometheus memory grows with it. 0 (default) = no alert."
   type        = number

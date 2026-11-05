@@ -145,6 +145,11 @@ resource "helm_release" "monitoring" {
         }
       }
     }) : "{}",
+    length(var.monitoring_disabled_default_rules) > 0 ? yamlencode({
+      defaultRules = {
+        disabled = { for name in var.monitoring_disabled_default_rules : name => true }
+      }
+    }) : "{}",
     length(local.monitoring_guard_rule_groups) > 0 ? yamlencode({
       additionalPrometheusRulesMap = {
         "monitoring-guards" = { groups = local.monitoring_guard_rule_groups }
