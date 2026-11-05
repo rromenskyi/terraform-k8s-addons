@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.0] - 2026-11-05
+
+### Added
+- `monitoring_node_exporter_textfile_dir`: turns on node-exporter's textfile collector for a host directory, so host-side scripts can publish metrics. The chart's default `extraArgs` are kept. Empty by default.
+
 ## [2.16.0] - 2026-11-05
 
 ### Added
