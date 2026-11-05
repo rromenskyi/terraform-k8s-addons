@@ -215,6 +215,17 @@ variable "monitoring_disabled_default_rules" {
   }
 }
 
+variable "monitoring_node_exporter_textfile_dir" {
+  description = "Host directory the node-exporter textfile collector reads `*.prom` files from (e.g. `/var/lib/node_exporter/textfile`), so host-side scripts can publish metrics. The exporter sees the host root at `/host/root`, so no extra mount is needed. Empty (default) = collector off, chart behaviour."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.monitoring_node_exporter_textfile_dir == "" || can(regex("^/[A-Za-z0-9._/-]+$", var.monitoring_node_exporter_textfile_dir))
+    error_message = "monitoring_node_exporter_textfile_dir must be an absolute host path (letters, digits, `.`, `_`, `-`, `/`)."
+  }
+}
+
 variable "monitoring_head_series_budget" {
   description = "Series in a Prometheus head block above which `PrometheusHeadSeriesOverBudget` fires (for 1 h). Prometheus memory grows with it. 0 (default) = no alert."
   type        = number

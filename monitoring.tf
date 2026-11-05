@@ -145,6 +145,14 @@ resource "helm_release" "monitoring" {
         }
       }
     }) : "{}",
+    var.monitoring_node_exporter_textfile_dir != "" ? yamlencode({
+      prometheus-node-exporter = {
+        # Helm replaces lists, so the chart's own default comes along.
+        extraArgs = concat(local.node_exporter_chart_extra_args, [
+          "--collector.textfile.directory=/host/root${var.monitoring_node_exporter_textfile_dir}",
+        ])
+      }
+    }) : "{}",
     length(var.monitoring_disabled_default_rules) > 0 ? yamlencode({
       defaultRules = {
         disabled = { for name in var.monitoring_disabled_default_rules : name => true }
@@ -159,6 +167,13 @@ resource "helm_release" "monitoring" {
 }
 
 locals {
+  # kube-prometheus-stack's default `prometheus-node-exporter.extraArgs`
+  # (chart 91.8.2). Keep in step with the chart when bumping it.
+  node_exporter_chart_extra_args = [
+    "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)",
+    "--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$",
+  ]
+
   # kube-prometheus-stack's default `kubelet.serviceMonitor.metricRelabelings`
   # (chart 91.8.2). Keep in step with the chart when bumping it.
   kubelet_chart_metric_relabelings = [{
