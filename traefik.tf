@@ -15,7 +15,7 @@ data "helm_template" "traefik_crds" {
   version      = var.traefik_version
   include_crds = true
   # Offline render: without a cluster Helm assumes an old Kubernetes and
-  # the chart's kubeVersion constraint (>= 1.25) rejects it. The value
+  # the chart's kubeVersion constraint (>= 1.30) rejects it. The value
   # only satisfies that check; CRD content doesn't depend on it.
   kube_version = "1.30.0"
 }

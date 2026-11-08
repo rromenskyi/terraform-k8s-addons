@@ -107,7 +107,7 @@ variable "enable_traefik_dashboard" {
 variable "traefik_version" {
   description = "Traefik Helm chart version. The chart pins itself to a matching Traefik appVersion via `appVersion`, so chart-version bumps generally also bump the controller binary."
   type        = string
-  default     = "41.7.1"
+  default     = "42.3.1"
 }
 
 # --------------------------------------------------------------------------
@@ -171,7 +171,7 @@ variable "enable_monitoring" {
 variable "kube_prometheus_stack_version" {
   description = "kube-prometheus-stack Helm chart version"
   type        = string
-  default     = "91.8.2"
+  default     = "93.1.0"
 }
 
 variable "monitoring_grafana_extra_values" {
