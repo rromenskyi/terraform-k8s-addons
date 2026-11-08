@@ -168,14 +168,14 @@ resource "helm_release" "monitoring" {
 
 locals {
   # kube-prometheus-stack's default `prometheus-node-exporter.extraArgs`
-  # (chart 91.8.2). Keep in step with the chart when bumping it.
+  # (chart 93.1.0). Keep in step with the chart when bumping it.
   node_exporter_chart_extra_args = [
     "--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run/containerd/.+|var/lib/docker/.+|var/lib/kubelet/.+)($|/)",
     "--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|erofs)$",
   ]
 
   # kube-prometheus-stack's default `kubelet.serviceMonitor.metricRelabelings`
-  # (chart 91.8.2). Keep in step with the chart when bumping it.
+  # (chart 93.1.0). Keep in step with the chart when bumping it.
   kubelet_chart_metric_relabelings = [{
     sourceLabels = ["__name__", "le"]
     regex        = "(csi_operations|storage_operation_duration)_seconds_bucket;(0.25|2.5|15|25|120|600)(\\.0)?"
@@ -183,7 +183,7 @@ locals {
   }]
 
   # kube-prometheus-stack's default `kubeApiServer.serviceMonitor.metricRelabelings`
-  # (chart 91.8.2). Keep in step with the chart when bumping it.
+  # (chart 93.1.0). Keep in step with the chart when bumping it.
   apiserver_chart_metric_relabelings = [{
     sourceLabels = ["__name__", "le"]
     regex        = "(etcd_request|apiserver_request_slo|apiserver_request_sli|apiserver_request)_duration_seconds_bucket;(0\\.15|0\\.2|0\\.3|0\\.35|0\\.4|0\\.45|0\\.6|0\\.7|0\\.8|0\\.9|1\\.25|1\\.5|1\\.75|2|3|3\\.5|4|4\\.5|6|7|8|9|15|20|40|45|50)(\\.0)?"

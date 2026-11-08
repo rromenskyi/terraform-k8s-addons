@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.18.0] - 2026-11-08
+
+### Changed
+- Traefik chart 42.3.1 (Traefik v3.7.17; was 41.7.1, v3.7.14). Needs Kubernetes 1.30 or newer. Five CRDs gain optional fields.
+- kube-prometheus-stack 93.1.0 (was 91.8.2): Prometheus Operator v0.95.1, Prometheus 3.16.0, Grafana 13.3.0. The chart's CRD upgrade job applies the CRDs. Prometheus, Alertmanager and the operator now also select `kubernetes.io/os: linux` nodes. cAdvisor's `container_memory_swap` is no longer dropped (one more series per container).
+
 ## [2.17.0] - 2026-11-05
 
 ### Added
